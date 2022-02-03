@@ -17,15 +17,18 @@ public class SegmentRepo {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+
+
     public List<Segments> getSegments() {
-        return jdbcTemplate.query("SELECT * FROM SEGMENTS", new RowMapper<Segments>() {
+        return  jdbcTemplate.query("SELECT * FROM SEGMENTS", new RowMapper<Segments>() {
             @Override
             public Segments mapRow(ResultSet resultSet, int i) throws SQLException {
                 Segments segmentDto = new Segments();
-                segmentDto.setId(resultSet.getInt("idsegments"));
+                segmentDto.setId(resultSet.getString("idsegments"));
                 segmentDto.setName(resultSet.getString("name"));
                 return segmentDto;
             }
         });
     }
+
 }

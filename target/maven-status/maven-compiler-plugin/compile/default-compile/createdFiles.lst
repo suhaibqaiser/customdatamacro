@@ -1,6 +1,9 @@
+com\prismmedia\beeswax\customdatamacro\entity\BidRequest.class
 com\prismmedia\beeswax\customdatamacro\service\SegmentRepo$1.class
 com\prismmedia\beeswax\customdatamacro\CustomdatamacroApplication.class
+com\prismmedia\beeswax\customdatamacro\service\LookupService$1.class
 com\prismmedia\beeswax\customdatamacro\entity\Segments.class
 com\prismmedia\beeswax\customdatamacro\security\HttpSecurityConfig.class
+com\prismmedia\beeswax\customdatamacro\service\LookupService.class
 com\prismmedia\beeswax\customdatamacro\service\SegmentRepo.class
 com\prismmedia\beeswax\customdatamacro\controllers\SegmentController.class

@@ -3,16 +3,26 @@ package com.prismmedia.beeswax.customdatamacro.entity;
 
 public class Segments {
 
-    private Integer id;
+    private String id;
 
     private String name;
 
+    public String getValue() {
+        return value;
+    }
 
-    public Integer getId() {
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    private String value;
+
+
+    public String getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(String id) {
         this.id = id;
     }
 
