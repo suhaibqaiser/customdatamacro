@@ -28,7 +28,8 @@ public class HttpSecurityConfig extends WebSecurityConfigurerAdapter {
                 .httpBasic()
                 .and()
                 .authorizeRequests()
-                .antMatchers(HttpMethod.GET, "/augment/segments/**").hasRole("USER")
+                .antMatchers(HttpMethod.POST, "/augment/segments/**").permitAll()
+                .antMatchers(HttpMethod.GET, "/augment/segments/**").permitAll()
                 .and()
                 .csrf().disable()
                 .formLogin().disable();
