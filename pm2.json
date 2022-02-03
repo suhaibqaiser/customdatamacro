@@ -1,0 +1,10 @@
+{
+    "name": "customdatamacro",
+    "script": "/usr/bin/java",
+    "args": [
+        "-jar",
+        "target/customdatamacro-0.0.1-SNAPSHOT.jar"
+    ],
+    "exec_interpreter": "",
+    "exec_mode": "fork"
+}
