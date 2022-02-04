@@ -6,13 +6,16 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.google.protobuf.*;
 import com.prismmedia.beeswax.customdatamacro.entity.Segments;
-import com.prismmedia.beeswax.customdatamacro.util.ProtoJsonUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.codec.Utf8;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 @Service
@@ -33,8 +36,9 @@ public class LookupService {
         return segArray;
     }
 
-    public List<Segments> parseSegmentsFromProtoText(final String bidRequestProtoText) {
-        Openrtb.BidRequest bidRequest = ProtoJsonUtil.parseFromProtoBuf(bidRequestProtoText);
+    public List<Segments> parseSegmentsFromProtoText(final String bidRequestProtoText) throws InvalidProtocolBufferException {
+        System.out.println(bidRequestProtoText);
+        Openrtb.BidRequest bidRequest = DiscardUnknownFieldsParser.wrap(Openrtb.BidRequest.parser()).parseFrom(bidRequestProtoText.getBytes(StandardCharsets.UTF_8));
         List<Openrtb.BidRequest.Data.Segment> protoSegArray = bidRequest.getUser().getData(0).getSegmentList();
         List<Segments> segList = new ArrayList<Segments>();
         for(Openrtb.BidRequest.Data.Segment segItem : protoSegArray) {
