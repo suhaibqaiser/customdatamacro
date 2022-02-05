@@ -7,12 +7,20 @@ public class Segments {
 
     private String id;
 
+    private String key;
+
     private String name;
 
-    public Segments(String id, String name, String value) {
+    private String value;
+
+    private String advertiserId;
+
+    public Segments(String id, String key, String name, String value, String advertiserId) {
         this.id = id;
+        this.key = key;
         this.name = name;
         this.value = value;
+        this.advertiserId = advertiserId;
     }
 
     public Segments() {
@@ -28,6 +36,21 @@ public class Segments {
         if(segment.get("value") != null) {
             this.value = segment.get("value").textValue();
         }
+        if(segment.get("key") != null) {
+            this.key = segment.get("key").textValue();
+        }
+        if(segment.get("advertiserId") != null) {
+            this.advertiserId = segment.get("advertiserId").textValue();
+        }
+    }
+
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
     }
 
     public String getValue() {
@@ -37,8 +60,6 @@ public class Segments {
     public void setValue(String value) {
         this.value = value;
     }
-
-    private String value;
 
 
     public String getId() {
@@ -55,5 +76,13 @@ public class Segments {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getAdvertiserId() {
+        return advertiserId;
+    }
+
+    public void setAdvertiserId(String advertiserId) {
+        this.advertiserId = advertiserId;
     }
 }

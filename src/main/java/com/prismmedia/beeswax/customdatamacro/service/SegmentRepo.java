@@ -24,8 +24,11 @@ public class SegmentRepo {
             @Override
             public Segments mapRow(ResultSet resultSet, int i) throws SQLException {
                 Segments segmentDto = new Segments();
-                segmentDto.setId(resultSet.getString("idsegments"));
+                segmentDto.setId(resultSet.getString("id"));
+                segmentDto.setKey(resultSet.getString("key"));
                 segmentDto.setName(resultSet.getString("name"));
+                segmentDto.setValue(resultSet.getString("value"));
+                segmentDto.setAdvertiserId(resultSet.getString("advertiserId"));
                 return segmentDto;
             }
         });

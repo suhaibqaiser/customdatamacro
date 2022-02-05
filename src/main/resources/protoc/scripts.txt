@@ -1,0 +1,17 @@
+ALTER TABLE `usersegments`.`segments`
+ADD COLUMN `advertiserId` VARCHAR(45) NULL AFTER `name`;
+
+ALTER TABLE `usersegments`.`segments`
+ADD COLUMN `value` VARCHAR(45) NULL AFTER `name`,
+CHANGE COLUMN `idsegments` `id` INT NOT NULL ;
+
+spring.security.user.name=prismmedia
+spring.security.user.password=prismmacro
+spring.security.user.roles=manager
+
+server.ssl.key-store: classpath:prismmedia.p12
+server.ssl.key-store-password: prismmacro
+server.ssl.key-store-type: pkcs12
+server.ssl.key-alias: prismmedia
+server.ssl.key-password: prismmacro
+server.port: 8443

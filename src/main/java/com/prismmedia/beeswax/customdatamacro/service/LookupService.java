@@ -1,5 +1,6 @@
 package com.prismmedia.beeswax.customdatamacro.service;
 
+import com.beeswax.augment.Augmentor;
 import com.beeswax.openrtb.Openrtb;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -9,9 +10,9 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.google.protobuf.*;
 import com.prismmedia.beeswax.customdatamacro.entity.Segments;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.codec.Utf8;
 import org.springframework.stereotype.Service;
 
+import javax.swing.text.Segment;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -36,19 +37,22 @@ public class LookupService {
         return segArray;
     }
 
-    public List<Segments> parseSegmentsFromProtoText(final String bidRequestProtoText) throws InvalidProtocolBufferException {
-        System.out.println(bidRequestProtoText);
-        Openrtb.BidRequest bidRequest = DiscardUnknownFieldsParser.wrap(Openrtb.BidRequest.parser()).parseFrom(bidRequestProtoText.getBytes(StandardCharsets.UTF_8));
-        List<Openrtb.BidRequest.Data.Segment> protoSegArray = bidRequest.getUser().getData(0).getSegmentList();
-        List<Segments> segList = new ArrayList<Segments>();
-        for(Openrtb.BidRequest.Data.Segment segItem : protoSegArray) {
-            Segments seg = new Segments();
-            seg.setId(segItem.getId());
-            seg.setName(segItem.getName());
-            seg.setValue(segItem.getValue());
-            segList.add(seg);
+    public List<Augmentor.AugmentorResponse.Segment> parseSegmentsFromProtoText(Openrtb.BidRequest bidRequest) throws InvalidProtocolBufferException {
+       List<Augmentor.AugmentorResponse.Segment> segList = new ArrayList<Augmentor.AugmentorResponse.Segment>();
+        Openrtb.BidRequest.User bidRequestUser = bidRequest.getUser();
+        if(bidRequestUser.getDataCount() != 0) {
+            List<Openrtb.BidRequest.Data.Segment> protoSegArray = bidRequestUser.getData(0).getSegmentList();
+            if(protoSegArray != null) {
+                for(Openrtb.BidRequest.Data.Segment segItem : protoSegArray) {
+                    Augmentor.AugmentorResponse.Segment.Builder segBuilder = Augmentor.AugmentorResponse.Segment.newBuilder();
+                    segBuilder.setId(segItem.getId());
+                    segBuilder.setValue(segItem.getValue());
+                    segList.add(segBuilder.build());
+                }
+            }
         }
         return segList;
+
 
     }
     public List<Segments> parseSegmentsFromJson(final String bidRequest) throws IOException {
