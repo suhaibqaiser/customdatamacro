@@ -6,10 +6,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
-import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
 public class SegmentRepo {
@@ -34,4 +34,21 @@ public class SegmentRepo {
         });
     }
 
+    public ConcurrentHashMap<String, Segments> fetchSegmentsNameMap() {
+        List<Segments> segList = getSegments();
+        ConcurrentHashMap<String, Segments> segMap = new ConcurrentHashMap<String, Segments>();
+        for(Segments segItem : segList) {
+            segMap.put(segItem.getName(), segItem);
+        }
+        return segMap;
+    }
+
+    public ConcurrentHashMap<String, Segments> fetchSegmentsValueMap() {
+        List<Segments> segList = getSegments();
+        ConcurrentHashMap<String, Segments> segMap = new ConcurrentHashMap<String, Segments>();
+        for(Segments segItem : segList) {
+            segMap.put(segItem.getValue(), segItem);
+        }
+        return segMap;
+    }
 }

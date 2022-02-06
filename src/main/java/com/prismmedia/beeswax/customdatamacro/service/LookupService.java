@@ -7,22 +7,22 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import com.google.protobuf.*;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.prismmedia.beeswax.customdatamacro.entity.Segments;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.swing.text.Segment;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class LookupService {
 
-    private static List<Segments> segArray = null;
+    private static ConcurrentHashMap<String, Segments> segNameMap = null;
+
+    private static ConcurrentHashMap<String, Segments> segValueMap = null;
 
     @Autowired
     private SegmentRepo segmentRepo;
@@ -30,11 +30,18 @@ public class LookupService {
     public LookupService() {
     }
 
-    public List<Segments> getSegArray() {
-        if(segArray == null) {
-            segArray = segmentRepo.getSegments();
+    public ConcurrentHashMap<String, Segments> getSegValueMap() {
+        if(segValueMap == null) {
+            segValueMap = segmentRepo.fetchSegmentsValueMap();
         }
-        return segArray;
+        return segValueMap;
+    }
+
+    public ConcurrentHashMap<String, Segments> getSegNameMap() {
+        if(segNameMap == null) {
+            segNameMap = segmentRepo.fetchSegmentsNameMap();
+        }
+        return segNameMap;
     }
 
     public List<Augmentor.AugmentorResponse.Segment> parseSegmentsFromProtoText(Openrtb.BidRequest bidRequest) throws InvalidProtocolBufferException {
@@ -45,16 +52,39 @@ public class LookupService {
             if(protoSegArray != null) {
                 for(Openrtb.BidRequest.Data.Segment segItem : protoSegArray) {
                     Augmentor.AugmentorResponse.Segment.Builder segBuilder = Augmentor.AugmentorResponse.Segment.newBuilder();
-                    segBuilder.setId(segItem.getId());
-                    segBuilder.setValue(segItem.getValue());
-                    segList.add(segBuilder.build());
+                    Segments segEntity = lookupSegmentFromDB(segItem);
+                    if(segEntity != null) {
+                        segBuilder.setId(segEntity.getKey());
+                        segBuilder.setValue(segEntity.getValue());
+                        segList.add(segBuilder.build());
+                    }
+                }
+                if(segList.isEmpty()) {
+                    segList.add(getEmptySegment());
                 }
             }
         }
         return segList;
 
-
     }
+
+    public Segments lookupSegmentFromDB(final Openrtb.BidRequest.Data.Segment segment) {
+        Segments returnSegment = null;
+        if(segment != null && getSegNameMap().containsKey(segment.getName())) {
+            returnSegment = getSegNameMap().get(segment.getName());
+        } else if(segment != null && getSegValueMap().containsKey(segment.getValue())) {
+            returnSegment = getSegValueMap().get(segment.getValue());
+        }
+        return returnSegment;
+    }
+
+    public Augmentor.AugmentorResponse.Segment getEmptySegment() {
+        Augmentor.AugmentorResponse.Segment.Builder segBuilder = Augmentor.AugmentorResponse.Segment.newBuilder();
+        segBuilder.setId("0");
+        segBuilder.setValue("0");
+        return segBuilder.build();
+    }
+
     public List<Segments> parseSegmentsFromJson(final String bidRequest) throws IOException {
         List<Segments> segmentArray = null;
 

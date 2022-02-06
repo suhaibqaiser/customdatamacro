@@ -1,20 +1,17 @@
 package com.prismmedia.beeswax.customdatamacro.controllers;
 
 import com.beeswax.augment.Augmentor;
-import com.beeswax.openrtb.Openrtb;
 import com.prismmedia.beeswax.customdatamacro.entity.Segments;
 import com.prismmedia.beeswax.customdatamacro.service.LookupService;
 import com.prismmedia.beeswax.customdatamacro.service.SegmentRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
 
 @RestController
@@ -31,28 +28,29 @@ public class SegmentController {
 
     }
 
-    @GetMapping("/segments")
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<Segments> getSegments() {
-        return segmentRepo.getSegments();
+    @GetMapping("/test")
+    public String test() {
+        return "system works";
     }
 
-    @PostMapping("/bidrequestjson")
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<Segments> processBidRequestFromJson(@RequestBody String bidRequest) throws IOException {
-        return lookupService.parseSegmentsFromJson(bidRequest);
-
+    @PostMapping("/segmentList")
+    @Consumes("application/json")
+    @Produces("application/json")
+    public Collection<Segments> fetchBidRequestFromJson() {
+        return lookupService.getSegNameMap().values();
     }
 
-    @PostMapping("/bidrequestproto")
+    @PostMapping("/bidrequest")
     @Consumes("application/x-protobuf")
     @Produces("application/x-protobuf")
-    public byte[] processBidRequestFromProto(@RequestBody byte[] body) throws IOException {
+    public byte[] processBidRequestFromProto(@RequestBody byte[] body, HttpServletResponse response) throws IOException {
         Augmentor.AugmentorRequest request = Augmentor.AugmentorRequest.parseFrom(body);
-        //System.out.println(bidRequest.toString());
         List<Augmentor.AugmentorResponse.Segment> segList = lookupService.parseSegmentsFromProtoText(request.getBidRequest());
         Augmentor.AugmentorResponse.Builder responseBuilder = Augmentor.AugmentorResponse.newBuilder();
         responseBuilder.addAllSegments(segList);
+        if(segList.isEmpty()) {
+            response.setStatus(204);
+        }
         return responseBuilder.build().toByteArray();
 
 
