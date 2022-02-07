@@ -12,6 +12,7 @@ import com.prismmedia.beeswax.customdatamacro.entity.Segments;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,28 +21,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class LookupService {
 
-    private static ConcurrentHashMap<String, Segments> segNameMap = null;
-
-    private static ConcurrentHashMap<String, Segments> segValueMap = null;
+    @Autowired
+    private BeeswaxLoaderService loaderService;
 
     @Autowired
     private SegmentRepo segmentRepo;
 
     public LookupService() {
-    }
-
-    public ConcurrentHashMap<String, Segments> getSegValueMap() {
-        if(segValueMap == null) {
-            segValueMap = segmentRepo.fetchSegmentsValueMap();
-        }
-        return segValueMap;
-    }
-
-    public ConcurrentHashMap<String, Segments> getSegNameMap() {
-        if(segNameMap == null) {
-            segNameMap = segmentRepo.fetchSegmentsNameMap();
-        }
-        return segNameMap;
     }
 
     public List<Augmentor.AugmentorResponse.Segment> parseSegmentsFromProtoText(Openrtb.BidRequest bidRequest) throws InvalidProtocolBufferException {
@@ -56,10 +42,12 @@ public class LookupService {
                     if(segEntity != null) {
                         segBuilder.setId(segEntity.getKey());
                         segBuilder.setValue(segEntity.getValue());
+                        System.out.println("*** Found entry for ".concat(segItem.getName()).concat(" with auction id").concat(bidRequest.getId()));
                         segList.add(segBuilder.build());
                     }
                 }
                 if(segList.isEmpty()) {
+                    System.out.println(" ### No entry found for bid request ".concat(bidRequest.getId()));
                     segList.add(getEmptySegment());
                 }
             }
@@ -70,10 +58,14 @@ public class LookupService {
 
     public Segments lookupSegmentFromDB(final Openrtb.BidRequest.Data.Segment segment) {
         Segments returnSegment = null;
-        if(segment != null && getSegNameMap().containsKey(segment.getName())) {
-            returnSegment = getSegNameMap().get(segment.getName());
-        } else if(segment != null && getSegValueMap().containsKey(segment.getValue())) {
-            returnSegment = getSegValueMap().get(segment.getValue());
+        if(segment != null && loaderService.getSegNameMap().containsKey(segment.getName())) {
+            returnSegment = loaderService.getSegNameMap().get(segment.getName());
+        } else if(segment != null && loaderService.getSegNameMap().containsKey(segment.getValue())) {
+            returnSegment = loaderService.getSegNameMap().get(segment.getValue());
+        } else if(segment != null && loaderService.getSegValueMap().containsKey(segment.getName())) {
+            returnSegment = loaderService.getSegValueMap().get(segment.getName());
+        } else if(segment != null && loaderService.getSegValueMap().containsKey(segment.getValue())) {
+            returnSegment = loaderService.getSegValueMap().get(segment.getValue());
         }
         return returnSegment;
     }
@@ -85,6 +77,7 @@ public class LookupService {
         return segBuilder.build();
     }
 
+    @Deprecated
     public List<Segments> parseSegmentsFromJson(final String bidRequest) throws IOException {
         List<Segments> segmentArray = null;
 
@@ -115,7 +108,7 @@ public class LookupService {
         return segmentArray;
     }
 
-    private List<Segments> parseSegmentNodes(final ObjectMapper mapper, final JsonNode segments) throws IOException {
+    private List<Segments> parseSegmentNodes(final ObjectMapper mapper, @NotNull final JsonNode segments) throws IOException {
         List<Segments> segmentArray = null;
         if (segments.isArray()) {
             ObjectReader reader = mapper.readerFor(new TypeReference<List<Segments>>() {

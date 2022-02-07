@@ -2,6 +2,7 @@ package com.prismmedia.beeswax.customdatamacro.controllers;
 
 import com.beeswax.augment.Augmentor;
 import com.prismmedia.beeswax.customdatamacro.entity.Segments;
+import com.prismmedia.beeswax.customdatamacro.service.BeeswaxLoaderService;
 import com.prismmedia.beeswax.customdatamacro.service.LookupService;
 import com.prismmedia.beeswax.customdatamacro.service.SegmentRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,9 @@ public class SegmentController {
     @Autowired
     private LookupService lookupService;
 
+    @Autowired
+    private BeeswaxLoaderService loaderService;
+
     public SegmentController() {
 
     }
@@ -33,11 +37,11 @@ public class SegmentController {
         return "system works";
     }
 
-    @PostMapping("/segmentList")
+    @GetMapping("/segments")
     @Consumes("application/json")
     @Produces("application/json")
     public Collection<Segments> fetchBidRequestFromJson() {
-        return lookupService.getSegNameMap().values();
+        return loaderService.getSegNameMap().values();
     }
 
     @PostMapping("/bidrequest")

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 public class Segments {
 
-    private String id;
+    private Integer id;
 
     private String key;
 
@@ -13,9 +13,9 @@ public class Segments {
 
     private String value;
 
-    private String advertiserId;
+    private Integer advertiserId;
 
-    public Segments(String id, String key, String name, String value, String advertiserId) {
+    public Segments(Integer id, String key, String name, String value, Integer advertiserId) {
         this.id = id;
         this.key = key;
         this.name = name;
@@ -28,7 +28,7 @@ public class Segments {
 
     public Segments(final JsonNode segment) {
         if(segment.get("id") != null) {
-            this.id = segment.get("id").textValue();
+            this.id = Integer.parseInt(segment.get("id").textValue());
         }
         if(segment.get("name") != null) {
             this.name = segment.get("name").textValue();
@@ -40,7 +40,7 @@ public class Segments {
             this.key = segment.get("key").textValue();
         }
         if(segment.get("advertiserId") != null) {
-            this.advertiserId = segment.get("advertiserId").textValue();
+            this.advertiserId = segment.get("advertiserId").intValue();
         }
     }
 
@@ -58,15 +58,18 @@ public class Segments {
     }
 
     public void setValue(String value) {
+        if(value == null) {
+            value = "";
+        }
         this.value = value;
     }
 
 
-    public String getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -78,11 +81,14 @@ public class Segments {
         this.name = name;
     }
 
-    public String getAdvertiserId() {
+    public Integer getAdvertiserId() {
         return advertiserId;
     }
 
-    public void setAdvertiserId(String advertiserId) {
+    public void setAdvertiserId(Integer advertiserId) {
+        if(advertiserId == null) {
+            advertiserId = 0;
+        }
         this.advertiserId = advertiserId;
     }
 }
