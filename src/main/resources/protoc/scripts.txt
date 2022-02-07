@@ -1,20 +1,8 @@
-ALTER TABLE `usersegments`.`segments`
-ADD COLUMN `advertiserId` VARCHAR(45) NULL AFTER `name`;
-
-ALTER TABLE `usersegments`.`segments`
-ADD COLUMN `value` VARCHAR(45) NULL AFTER `name`,
-CHANGE COLUMN `idsegments` `id` INT NOT NULL ;
-
-ALTER TABLE `usersegments`.`segments`
-CHANGE COLUMN `id` `id` INT NOT NULL AUTO_INCREMENT ;
-
-spring.security.user.name=prismmedia
-spring.security.user.password=prismmacro
-spring.security.user.roles=manager
-
-server.ssl.key-store: classpath:prismmedia.p12
-server.ssl.key-store-password: prismmacro
-server.ssl.key-store-type: pkcs12
-server.ssl.key-alias: prismmedia
-server.ssl.key-password: prismmacro
-server.port: 8443
+CREATE TABLE `SEGMENTS` (
+  `id` int NOT NULL,
+  `key` varchar(45) DEFAULT NULL,
+  `name` varchar(500) DEFAULT NULL,
+  `value` varchar(500) DEFAULT NULL,
+  `advertiserId` int DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

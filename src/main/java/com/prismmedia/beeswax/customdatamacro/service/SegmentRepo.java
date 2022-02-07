@@ -39,12 +39,17 @@ public class SegmentRepo {
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void deleteAllFromSegments() {
-        jdbcTemplate.execute("TRUNCATE TABLE SEGMENTS");
+        try {
+            jdbcTemplate.execute("TRUNCATE TABLE SEGMENTS");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     public int save(final Segments segments) {
         try {
-            return jdbcTemplate.update("INSERT INTO segments values (?,?,?,?,?)", segments.getId(), segments.getKey(), segments.getName(), segments.getValue(), segments.getAdvertiserId());
+            return jdbcTemplate.update("INSERT INTO SEGMENTS values (?,?,?,?,?)", segments.getId(), segments.getKey(), segments.getName(), segments.getValue(), segments.getAdvertiserId());
         } catch (Exception e) {
             e.printStackTrace();
             return 0;
