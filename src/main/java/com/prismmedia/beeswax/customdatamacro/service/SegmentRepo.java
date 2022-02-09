@@ -57,6 +57,15 @@ public class SegmentRepo {
 
     }
 
+    public ConcurrentHashMap<Integer, Segments> fetchSegmentsIdMap() {
+        List<Segments> segList = getSegments();
+        ConcurrentHashMap<Integer, Segments> segMap = new ConcurrentHashMap<Integer, Segments>();
+        for(Segments segItem : segList) {
+            segMap.put(segItem.getId(), segItem);
+        }
+        return segMap;
+    }
+
     public ConcurrentHashMap<String, Segments> fetchSegmentsNameMap() {
         List<Segments> segList = getSegments();
         ConcurrentHashMap<String, Segments> segMap = new ConcurrentHashMap<String, Segments>();

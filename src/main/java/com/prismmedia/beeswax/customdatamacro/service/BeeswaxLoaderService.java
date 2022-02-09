@@ -9,14 +9,10 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -27,6 +23,8 @@ public class BeeswaxLoaderService {
     private static ConcurrentHashMap<String, Segments> segNameMap = null;
 
     private static ConcurrentHashMap<String, Segments> segValueMap = null;
+
+    private static ConcurrentHashMap<Integer, Segments> segIdMap = null;
 
     @Autowired
     private SegmentRepo segRepo;
@@ -91,6 +89,7 @@ public class BeeswaxLoaderService {
                             segRepo.save(segments);
                             nameMap.put(segments.getName(), segments);
                             valueMap.put(segments.getValue(), segments);
+                            segIdMap.put(segments.getId(), segments);
                             rowCount++;
                         }
 
@@ -130,5 +129,15 @@ public class BeeswaxLoaderService {
             segNameMap = segRepo.fetchSegmentsNameMap();
         }
         return segNameMap;
+    }
+
+    public ConcurrentHashMap<Integer, Segments> getSegIdMap() {
+        if(segIdMap == null) {
+            new Thread(() -> {
+                loadSegmentTree();
+            }).start();
+            segIdMap = segRepo.fetchSegmentsIdMap();
+        }
+        return segIdMap;
     }
 }

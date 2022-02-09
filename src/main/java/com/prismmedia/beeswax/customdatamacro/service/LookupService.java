@@ -33,6 +33,7 @@ public class LookupService {
     public List<Augmentor.AugmentorResponse.Segment> parseSegmentsFromProtoText(Openrtb.BidRequest bidRequest) throws InvalidProtocolBufferException {
        List<Augmentor.AugmentorResponse.Segment> segList = new ArrayList<Augmentor.AugmentorResponse.Segment>();
         Openrtb.BidRequest.User bidRequestUser = bidRequest.getUser();
+        Segments macroResponse = new Segments();
         if(bidRequestUser.getDataCount() != 0) {
             List<Openrtb.BidRequest.Data.Segment> protoSegArray = bidRequestUser.getData(0).getSegmentList();
             if(protoSegArray != null) {
@@ -40,6 +41,9 @@ public class LookupService {
                     Augmentor.AugmentorResponse.Segment.Builder segBuilder = Augmentor.AugmentorResponse.Segment.newBuilder();
                     Segments segEntity = lookupSegmentFromDB(segItem);
                     if(segEntity != null) {
+                        if(macroResponse.getId() < segEntity.getId()) {
+                            macroResponse = segEntity;
+                        }
                         segBuilder.setId(segEntity.getKey());
                         segBuilder.setValue(segEntity.getValue());
                         System.out.println("*** Found entry for ".concat(segItem.getName()).concat(" with auction id").concat(bidRequest.getId()));
@@ -52,6 +56,7 @@ public class LookupService {
                 }
             }
         }
+
         return segList;
 
     }
