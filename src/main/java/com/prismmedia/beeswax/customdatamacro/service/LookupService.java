@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.prismmedia.beeswax.customdatamacro.entity.Advertiser;
 import com.prismmedia.beeswax.customdatamacro.entity.Segments;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,7 +17,6 @@ import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class LookupService {
@@ -24,16 +24,21 @@ public class LookupService {
     @Autowired
     private BeeswaxLoaderService loaderService;
 
+    private Segments macroSegment = null;
+
     @Autowired
     private SegmentRepo segmentRepo;
 
     public LookupService() {
     }
 
-    public List<Augmentor.AugmentorResponse.Segment> parseSegmentsFromProtoText(Openrtb.BidRequest bidRequest) throws InvalidProtocolBufferException {
-       List<Augmentor.AugmentorResponse.Segment> segList = new ArrayList<Augmentor.AugmentorResponse.Segment>();
+    public Augmentor.AugmentorResponse parseSegmentsFromProtoText(Openrtb.BidRequest bidRequest) throws InvalidProtocolBufferException {
+        Augmentor.AugmentorResponse.Builder responseBuilder = Augmentor.AugmentorResponse.newBuilder();
+        List<Augmentor.AugmentorResponse.Segment> segList = new ArrayList<Augmentor.AugmentorResponse.Segment>();
+        List<Augmentor.AugmentorResponse.Macro> customMacro = new ArrayList<Augmentor.AugmentorResponse.Macro>();
+        Augmentor.AugmentorResponse.Macro.Builder macroBuilder = Augmentor.AugmentorResponse.Macro.newBuilder();
         Openrtb.BidRequest.User bidRequestUser = bidRequest.getUser();
-        Segments macroResponse = new Segments();
+        macroSegment = new Segments(0, "", "", "", new Advertiser(0, ""));
         if(bidRequestUser.getDataCount() != 0) {
             List<Openrtb.BidRequest.Data.Segment> protoSegArray = bidRequestUser.getData(0).getSegmentList();
             if(protoSegArray != null) {
@@ -41,8 +46,8 @@ public class LookupService {
                     Augmentor.AugmentorResponse.Segment.Builder segBuilder = Augmentor.AugmentorResponse.Segment.newBuilder();
                     Segments segEntity = lookupSegmentFromDB(segItem);
                     if(segEntity != null) {
-                        if(macroResponse.getId() < segEntity.getId()) {
-                            macroResponse = segEntity;
+                        if(macroSegment.getId() < segEntity.getId()) {
+                            macroSegment = segEntity;
                         }
                         segBuilder.setId(segEntity.getKey());
                         segBuilder.setValue(segEntity.getValue());
@@ -53,24 +58,26 @@ public class LookupService {
                 if(segList.isEmpty()) {
                     System.out.println(" ### No entry found for bid request ".concat(bidRequest.getId()));
                     segList.add(getEmptySegment());
+                } else {
+                    macroBuilder.setName(macroSegment.getAdvertiser().getName());
+                    macroBuilder.setValue(macroSegment.getValue());
+                    responseBuilder.addDynamicMacros(macroBuilder.build());
+                    macroBuilder = Augmentor.AugmentorResponse.Macro.newBuilder();
+                    macroBuilder.setName(macroSegment.getAdvertiser().getName().concat("FeedRowID"));
+                    macroBuilder.setValue(macroSegment.getFeedRowId());
                 }
+                responseBuilder.addAllSegments(segList);
+                responseBuilder.addDynamicMacros(macroBuilder.build());
             }
         }
-
-        return segList;
+        return responseBuilder.build();
 
     }
 
     public Segments lookupSegmentFromDB(final Openrtb.BidRequest.Data.Segment segment) {
         Segments returnSegment = null;
-        if(segment != null && loaderService.getSegNameMap().containsKey(segment.getName())) {
-            returnSegment = loaderService.getSegNameMap().get(segment.getName());
-        } else if(segment != null && loaderService.getSegNameMap().containsKey(segment.getValue())) {
-            returnSegment = loaderService.getSegNameMap().get(segment.getValue());
-        } else if(segment != null && loaderService.getSegValueMap().containsKey(segment.getName())) {
-            returnSegment = loaderService.getSegValueMap().get(segment.getName());
-        } else if(segment != null && loaderService.getSegValueMap().containsKey(segment.getValue())) {
-            returnSegment = loaderService.getSegValueMap().get(segment.getValue());
+        if(segment != null && loaderService.getSegKeyMap().containsKey(segment.getId())) {
+            returnSegment = loaderService.getSegKeyMap().get(segment.getId());
         }
         return returnSegment;
     }

@@ -41,21 +41,34 @@ public class SegmentController {
     @Consumes("application/json")
     @Produces("application/json")
     public Collection<Segments> fetchBidRequestFromJson() {
-        return loaderService.getSegNameMap().values();
+        if(loaderService.getSegKeyMap() != null) {
+            return loaderService.getSegKeyMap().values();
+        } else {
+            return null;
+        }
+
     }
 
     @PostMapping("/bidrequest")
     @Consumes("application/x-protobuf")
     @Produces("application/x-protobuf")
-    public byte[] processBidRequestFromProto(@RequestBody byte[] body, HttpServletResponse response) throws IOException {
-        Augmentor.AugmentorRequest request = Augmentor.AugmentorRequest.parseFrom(body);
-        List<Augmentor.AugmentorResponse.Segment> segList = lookupService.parseSegmentsFromProtoText(request.getBidRequest());
-        Augmentor.AugmentorResponse.Builder responseBuilder = Augmentor.AugmentorResponse.newBuilder();
-        responseBuilder.addAllSegments(segList);
-        if(segList.isEmpty()) {
-            response.setStatus(204);
+    public byte[] processBidRequestFromProto(@RequestHeader("beeswax-auth-secret") String headerSecret, @RequestBody byte[] body, HttpServletResponse response) throws IOException {
+        if(headerSecret == null || headerSecret.isEmpty() || !headerSecret.contentEquals("98E4B46F8DE8EFD61EC76F88BFFE4BC9BA93D45C")) {
+            response.setStatus(401);
+            return null;
         }
-        return responseBuilder.build().toByteArray();
+
+        Augmentor.AugmentorRequest request = Augmentor.AugmentorRequest.parseFrom(body);
+
+        Augmentor.AugmentorResponse macroResponse = lookupService.parseSegmentsFromProtoText(request.getBidRequest());
+
+        if(macroResponse == null || macroResponse.getSegmentsList().isEmpty()) {
+            response.setStatus(204);
+            return null;
+        } else {
+            return macroResponse.toByteArray();
+        }
+
 
 
     }

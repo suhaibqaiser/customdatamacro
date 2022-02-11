@@ -13,14 +13,16 @@ public class Segments {
 
     private String value;
 
-    private Integer advertiserId;
+    private Advertiser advertiser;
 
-    public Segments(Integer id, String key, String name, String value, Integer advertiserId) {
+    private String feedRowId;
+
+    public Segments(Integer id, String key, String name, String value, Advertiser advertiser) {
         this.id = id;
         this.key = key;
         this.name = name;
         this.value = value;
-        this.advertiserId = advertiserId;
+        this.advertiser = advertiser;
     }
 
     public Segments() {
@@ -38,9 +40,6 @@ public class Segments {
         }
         if(segment.get("key") != null) {
             this.key = segment.get("key").textValue();
-        }
-        if(segment.get("advertiserId") != null) {
-            this.advertiserId = segment.get("advertiserId").intValue();
         }
     }
 
@@ -81,14 +80,19 @@ public class Segments {
         this.name = name;
     }
 
-    public Integer getAdvertiserId() {
-        return advertiserId;
+    public Advertiser getAdvertiser() {
+        return advertiser;
     }
 
-    public void setAdvertiserId(Integer advertiserId) {
-        if(advertiserId == null) {
-            advertiserId = 0;
-        }
-        this.advertiserId = advertiserId;
+    public void setAdvertiser(Advertiser advertiser) {
+        this.advertiser = advertiser;
+    }
+
+    public String getFeedRowId() {
+        return feedRowId;
+    }
+
+    public void setFeedRowId(String feedRowId) {
+        this.feedRowId = feedRowId;
     }
 }
