@@ -59,12 +59,17 @@ public class LookupService {
                     System.out.println(" ### No entry found for bid request ".concat(bidRequest.getId()));
                     segList.add(getEmptySegment());
                 } else {
-                    macroBuilder.setName(macroSegment.getAdvertiser().getName());
-                    macroBuilder.setValue(macroSegment.getValue());
-                    responseBuilder.addDynamicMacros(macroBuilder.build());
-                    macroBuilder = Augmentor.AugmentorResponse.Macro.newBuilder();
-                    macroBuilder.setName(macroSegment.getAdvertiser().getName().concat("FeedRowID"));
-                    macroBuilder.setValue(macroSegment.getFeedRowId());
+                    if(macroSegment.getValue() != null) {
+                        macroBuilder.setName(macroSegment.getAdvertiser().getName());
+                        macroBuilder.setValue(macroSegment.getValue());
+                        responseBuilder.addDynamicMacros(macroBuilder.build());
+                    }
+                    if(macroSegment.getFeedRowId() != null) {
+                        macroBuilder = Augmentor.AugmentorResponse.Macro.newBuilder();
+                        macroBuilder.setName(macroSegment.getAdvertiser().getName().concat("FeedRowID"));
+                        macroBuilder.setValue(macroSegment.getFeedRowId());
+                    }
+
                 }
                 responseBuilder.addAllSegments(segList);
                 responseBuilder.addDynamicMacros(macroBuilder.build());
