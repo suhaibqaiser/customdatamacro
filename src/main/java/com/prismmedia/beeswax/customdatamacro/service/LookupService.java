@@ -60,9 +60,11 @@ public class LookupService {
         if(enableLogs && bidRequest.getDevice() != null) {
             if(bidRequest.getDevice().getIp().equalsIgnoreCase("119.17.156.219") ||
                     bidRequest.getDevice().getIp().equalsIgnoreCase("119.17.156.1") ||
-                    bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress))
-            System.out.println(bidRequest.toString());
-            System.out.println("=====");
+                    bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
+                System.out.println(bidRequest.toString());
+                System.out.println("=====");
+            }
+
         }
 
         if(bidRequestUser.getDataCount() != 0) {
