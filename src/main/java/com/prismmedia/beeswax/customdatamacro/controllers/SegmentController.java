@@ -13,6 +13,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 
 @RestController
@@ -47,6 +48,19 @@ public class SegmentController {
             return null;
         }
 
+    }
+
+    @PostMapping("/resetlogs")
+    @Consumes("application/text")
+    @Produces("application/text")
+    public String resetLogs(@RequestHeader("start-log") Boolean startLog, @RequestHeader("log-limit") Integer logLimit) {
+        try {
+            lookupService.resetLog(startLog, logLimit);
+            return "It worked";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "did not worked";
+        }
     }
 
     @PostMapping("/bidrequest")

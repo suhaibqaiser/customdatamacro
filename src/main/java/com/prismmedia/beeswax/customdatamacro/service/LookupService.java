@@ -24,6 +24,12 @@ public class LookupService {
     @Autowired
     private BeeswaxLoaderService loaderService;
 
+    private static Boolean enableLogs = true;
+
+    private static Integer logCount = 0;
+
+    private static Integer logLimit = 5;
+
     private Segments macroSegment = null;
 
     @Autowired
@@ -32,13 +38,24 @@ public class LookupService {
     public LookupService() {
     }
 
+    public void resetLog(Boolean startLog, Integer logSize) {
+        enableLogs = startLog;
+        logCount = 0;
+        logLimit = logSize;
+    }
+
     public Augmentor.AugmentorResponse parseSegmentsFromProtoText(Openrtb.BidRequest bidRequest) throws InvalidProtocolBufferException {
         Augmentor.AugmentorResponse.Builder responseBuilder = Augmentor.AugmentorResponse.newBuilder();
         List<Augmentor.AugmentorResponse.Segment> segList = new ArrayList<Augmentor.AugmentorResponse.Segment>();
-        List<Augmentor.AugmentorResponse.Macro> customMacro = new ArrayList<Augmentor.AugmentorResponse.Macro>();
         Augmentor.AugmentorResponse.Macro.Builder macroBuilder = Augmentor.AugmentorResponse.Macro.newBuilder();
         Openrtb.BidRequest.User bidRequestUser = bidRequest.getUser();
         macroSegment = new Segments(0, "", "", "", new Advertiser(0, ""));
+        if(enableLogs && logCount < logLimit) {
+            logCount++;
+            System.out.println(bidRequest.getId());
+            System.out.println(bidRequest.getUser().toString());
+            System.out.println("=====");
+        }
         if(bidRequestUser.getDataCount() != 0) {
             List<Openrtb.BidRequest.Data.Segment> protoSegArray = bidRequestUser.getData(0).getSegmentList();
             if(protoSegArray != null) {
