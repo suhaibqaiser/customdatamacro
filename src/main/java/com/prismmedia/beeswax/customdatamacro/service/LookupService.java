@@ -55,7 +55,12 @@ public class LookupService {
             System.out.println(bidRequest.getId());
             System.out.println(bidRequest.getUser().toString());
             System.out.println("=====");
+        } else if(bidRequest.getId().contains("prism")) {
+            System.out.println(bidRequest.getId());
+            System.out.println(bidRequest.toString());
+            System.out.println("=====");
         }
+
         if(bidRequestUser.getDataCount() != 0) {
             List<Openrtb.BidRequest.Data.Segment> protoSegArray = bidRequestUser.getData(0).getSegmentList();
             if(protoSegArray != null) {
