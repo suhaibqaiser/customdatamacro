@@ -50,13 +50,7 @@ public class LookupService {
         Augmentor.AugmentorResponse.Macro.Builder macroBuilder = Augmentor.AugmentorResponse.Macro.newBuilder();
         Openrtb.BidRequest.User bidRequestUser = bidRequest.getUser();
         macroSegment = new Segments(0, "", "", "", new Advertiser(0, ""));
-        if(enableLogs && logCount < logLimit) {
-            logCount++;
-            System.out.println(bidRequest.getId());
-            System.out.println(bidRequest.getUser().toString());
-            System.out.println("=====");
-        } else if(bidRequest.getId().contains("prism")) {
-            System.out.println(bidRequest.getId());
+        if(enableLogs && bidRequestUser.getGeo() != null && bidRequestUser.getGeo().getRegion().equalsIgnoreCase("AUS/VIC")) {
             System.out.println(bidRequest.toString());
             System.out.println("=====");
         }
