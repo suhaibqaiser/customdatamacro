@@ -53,9 +53,10 @@ public class SegmentController {
     @PostMapping("/resetlogs")
     @Consumes("application/text")
     @Produces("application/text")
-    public String resetLogs(@RequestHeader("start-log") Boolean startLog, @RequestHeader("log-limit") Integer logLimit) {
+    public String resetLogs(@RequestHeader("start-log") Boolean startLog, @RequestHeader("log-limit") Integer logLimit,
+                            @RequestHeader("ip-address") String ipAddr) {
         try {
-            lookupService.resetLog(startLog, logLimit);
+            lookupService.resetLog(startLog, logLimit, ipAddr);
             return "It worked";
         } catch (Exception e) {
             e.printStackTrace();

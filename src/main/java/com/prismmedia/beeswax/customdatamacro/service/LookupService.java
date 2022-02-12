@@ -26,6 +26,8 @@ public class LookupService {
 
     private static Boolean enableLogs = true;
 
+    private static String ipAddress = "";
+
     private static Integer logCount = 0;
 
     private static Integer logLimit = 5;
@@ -38,9 +40,10 @@ public class LookupService {
     public LookupService() {
     }
 
-    public void resetLog(Boolean startLog, Integer logSize) {
+    public void resetLog(Boolean startLog, Integer logSize, String ipAddr) {
         enableLogs = startLog;
         logCount = 0;
+        ipAddress = ipAddr;
         logLimit = logSize;
     }
 
@@ -50,7 +53,14 @@ public class LookupService {
         Augmentor.AugmentorResponse.Macro.Builder macroBuilder = Augmentor.AugmentorResponse.Macro.newBuilder();
         Openrtb.BidRequest.User bidRequestUser = bidRequest.getUser();
         macroSegment = new Segments(0, "", "", "", new Advertiser(0, ""));
-        if(enableLogs && bidRequestUser.getGeo() != null && bidRequestUser.getGeo().getRegion().equalsIgnoreCase("AUS/VIC")) {
+       /* if(enableLogs && bidRequestUser.getGeo() != null && bidRequestUser.getGeo().getRegion().equalsIgnoreCase("AUS/VIC")) {
+            System.out.println(bidRequest.toString());
+            System.out.println("=====");
+        }*/
+        if(enableLogs && bidRequest.getDevice() != null) {
+            if(bidRequest.getDevice().getIp().equalsIgnoreCase("119.17.156.219") ||
+                    bidRequest.getDevice().getIp().equalsIgnoreCase("119.17.156.1") ||
+                    bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress))
             System.out.println(bidRequest.toString());
             System.out.println("=====");
         }
