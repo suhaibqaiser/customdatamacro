@@ -1,6 +1,7 @@
 package com.prismmedia.beeswax.customdatamacro.service;
 
 import com.beeswax.augment.Augmentor;
+import com.beeswax.bid.Request;
 import com.beeswax.openrtb.Openrtb;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -24,7 +25,7 @@ public class LookupService {
     @Autowired
     private BeeswaxLoaderService loaderService;
 
-    private static Boolean enableLogs = true;
+    private static Boolean enableLogs = false;
 
     private static String ipAddress = "";
 
@@ -47,24 +48,77 @@ public class LookupService {
         logLimit = logSize;
     }
 
+    public void logEntry(Openrtb.BidRequest bidRequest) {
+        if(bidRequest.getDevice() != null) {
+            if(bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
+                System.out.println(bidRequest.toString());
+                System.out.println("=====");
+            }
+        }
+    }
+
+    public Request.BidAgentResponse parseSegmentsFromCustomBid(Openrtb.BidRequest bidRequest) throws InvalidProtocolBufferException {
+        Request.BidAgentResponse.Builder responseBuilder = Request.BidAgentResponse.newBuilder();
+        Request.BidAgentResponse.Bid.Builder bidBuilder = Request.BidAgentResponse.Bid.newBuilder();
+
+        Request.BidAgentResponse.Creative.Builder creativeBuilder = Request.BidAgentResponse.Creative.newBuilder();
+        Request.BidAgentResponse.Creative.Macro.Builder macroBuilder = Request.BidAgentResponse.Creative.Macro.newBuilder();
+        Openrtb.BidRequest.User bidRequestUser = bidRequest.getUser();
+        macroSegment = new Segments(0, "", "", "", new Advertiser(0, ""));
+
+        if(enableLogs) {
+            logEntry(bidRequest);
+        }
+        Boolean foundValue = false;
+        if(bidRequestUser.getDataCount() != 0) {
+            for(Openrtb.BidRequest.Data dataItem : bidRequestUser.getDataList()) {
+                List<Openrtb.BidRequest.Data.Segment> protoSegArray = dataItem.getSegmentList();
+                if(protoSegArray != null) {
+                    for (Openrtb.BidRequest.Data.Segment segItem : protoSegArray) {
+                        Segments segEntity = lookupSegmentFromDB(segItem);
+                        if (segEntity != null) {
+                            if (macroSegment.getId() < segEntity.getId()) {
+                                macroSegment = segEntity;
+                                foundValue = true;
+                            }
+                            if(enableLogs) {
+                                System.out.println("*** Found entry for ".concat(segItem.getName()).concat(" with auction id").concat(bidRequest.getExt().getAuctionidStr()));
+                            }
+
+                        }
+                    }
+                }
+            }
+            if(foundValue) {
+                if(macroSegment.getValue() != null && macroSegment.getValue() != "") {
+                    macroBuilder.setName(macroSegment.getAdvertiser().getName());
+                    macroBuilder.setValue(macroSegment.getValue());
+                    creativeBuilder.addDynamicMacros(macroBuilder.build());
+                }
+                if(macroSegment.getFeedRowId() != null) {
+                    macroBuilder = Request.BidAgentResponse.Creative.Macro.newBuilder();
+                    macroBuilder.setName(macroSegment.getAdvertiser().getName().concat("FeedRowID"));
+                    macroBuilder.setValue(macroSegment.getFeedRowId());
+                    creativeBuilder.addDynamicMacros(macroBuilder.build());
+                }
+                bidBuilder.setCreative(creativeBuilder.build());
+                responseBuilder.addBids(bidBuilder.build());
+            }
+        }
+
+        return responseBuilder.build();
+
+    }
+
     public Augmentor.AugmentorResponse parseSegmentsFromProtoText(Openrtb.BidRequest bidRequest) throws InvalidProtocolBufferException {
         Augmentor.AugmentorResponse.Builder responseBuilder = Augmentor.AugmentorResponse.newBuilder();
         List<Augmentor.AugmentorResponse.Segment> segList = new ArrayList<Augmentor.AugmentorResponse.Segment>();
         Augmentor.AugmentorResponse.Macro.Builder macroBuilder = Augmentor.AugmentorResponse.Macro.newBuilder();
         Openrtb.BidRequest.User bidRequestUser = bidRequest.getUser();
         macroSegment = new Segments(0, "", "", "", new Advertiser(0, ""));
-       /* if(enableLogs && bidRequestUser.getGeo() != null && bidRequestUser.getGeo().getRegion().equalsIgnoreCase("AUS/VIC")) {
-            System.out.println(bidRequest.toString());
-            System.out.println("=====");
-        }*/
-        if(enableLogs && bidRequest.getDevice() != null) {
-            if(bidRequest.getDevice().getIp().equalsIgnoreCase("119.17.156.219") ||
-                    bidRequest.getDevice().getIp().equalsIgnoreCase("119.17.156.1") ||
-                    bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
-                System.out.println(bidRequest.toString());
-                System.out.println("=====");
-            }
 
+        if(enableLogs) {
+            logEntry(bidRequest);
         }
 
         if(bidRequestUser.getDataCount() != 0) {

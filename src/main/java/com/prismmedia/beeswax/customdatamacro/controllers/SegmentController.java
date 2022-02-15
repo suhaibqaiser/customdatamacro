@@ -1,6 +1,7 @@
 package com.prismmedia.beeswax.customdatamacro.controllers;
 
 import com.beeswax.augment.Augmentor;
+import com.beeswax.bid.Request;
 import com.prismmedia.beeswax.customdatamacro.entity.Segments;
 import com.prismmedia.beeswax.customdatamacro.service.BeeswaxLoaderService;
 import com.prismmedia.beeswax.customdatamacro.service.LookupService;
@@ -78,6 +79,30 @@ public class SegmentController {
         Augmentor.AugmentorResponse macroResponse = lookupService.parseSegmentsFromProtoText(request.getBidRequest());
 
         if(macroResponse == null || macroResponse.getSegmentsList().isEmpty()) {
+            response.setStatus(204);
+            return null;
+        } else {
+            return macroResponse.toByteArray();
+        }
+
+
+
+    }
+
+    @PostMapping("/custombidagent")
+    @Consumes("application/x-protobuf")
+    @Produces("application/x-protobuf")
+    public byte[] processCustomBidAgent(@RequestHeader("beeswax-auth-secret") String headerSecret, @RequestBody byte[] body, HttpServletResponse response) throws IOException {
+        if(headerSecret == null || headerSecret.isEmpty() || !headerSecret.contentEquals("98E4B46F8DE8EFD61EC76F88BFFE4BC9BA93D45C")) {
+            response.setStatus(401);
+            return null;
+        }
+
+        Request.BidAgentRequest request = Request.BidAgentRequest.parseFrom(body);
+
+        Request.BidAgentResponse macroResponse = lookupService.parseSegmentsFromCustomBid(request.getBidRequest());
+
+        if(macroResponse == null || macroResponse.getBidsList().isEmpty()) {
             response.setStatus(204);
             return null;
         } else {
