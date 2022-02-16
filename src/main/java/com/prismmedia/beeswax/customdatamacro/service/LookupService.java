@@ -76,7 +76,7 @@ public class LookupService {
                 if(protoSegArray != null) {
                     for (Openrtb.BidRequest.Data.Segment segItem : protoSegArray) {
                         Segments segEntity = lookupSegmentFromDB(segItem);
-                        if (segEntity != null) {
+                        if (segEntity != null && segEntity.getId() != null) {
                             if (macroSegment.getId() < segEntity.getId()) {
                                 macroSegment = segEntity;
                                 foundValue = true;
@@ -90,12 +90,12 @@ public class LookupService {
                 }
             }
             if(foundValue) {
-                if(macroSegment.getValue() != null && macroSegment.getValue() != "") {
+                if(macroSegment.getValue() != null && !macroSegment.getValue().isEmpty()) {
                     macroBuilder.setName(macroSegment.getAdvertiser().getName());
                     macroBuilder.setValue(macroSegment.getValue());
                     creativeBuilder.addDynamicMacros(macroBuilder.build());
                 }
-                if(macroSegment.getFeedRowId() != null) {
+                if(macroSegment.getFeedRowId() != null && !macroSegment.getFeedRowId().isEmpty()) {
                     macroBuilder = Request.BidAgentResponse.Creative.Macro.newBuilder();
                     macroBuilder.setName(macroSegment.getAdvertiser().getName().concat("FeedRowID"));
                     macroBuilder.setValue(macroSegment.getFeedRowId());
