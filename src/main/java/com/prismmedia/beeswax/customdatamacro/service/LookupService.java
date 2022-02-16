@@ -101,7 +101,10 @@ public class LookupService {
                     macroBuilder.setValue(macroSegment.getFeedRowId());
                     creativeBuilder.addDynamicMacros(macroBuilder.build());
                 }
+                creativeBuilder.setId(310);
                 bidBuilder.setCreative(creativeBuilder.build());
+                bidBuilder.setBidPriceMicros(15000);
+                bidBuilder.setLineItemId(126);
                 responseBuilder.addBids(bidBuilder.build());
             }
         }
