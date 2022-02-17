@@ -148,7 +148,12 @@ public class BeeswaxLoaderService {
 
     public ConcurrentHashMap<String, Segments> getSegKeyMap() {
         if(segKeyMap == null) {
-            loadSegmentTree();
+            synchronized (BeeswaxLoaderService.class) {
+                if(segKeyMap == null) {
+                    loadSegmentTree();
+                }
+            }
+
         }
         return segKeyMap;
     }

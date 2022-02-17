@@ -113,7 +113,7 @@ public class LookupService {
                 }
                 creativeBuilder.setId(310);
                 bidBuilder.setCreative(creativeBuilder.build());
-                bidBuilder.setBidPriceMicros(15000);
+                bidBuilder.setBidPriceMicros(5000);
                 bidBuilder.setLineItemId(126);
                 responseBuilder.addBids(bidBuilder.build());
             }
