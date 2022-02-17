@@ -48,9 +48,10 @@ public class LookupService {
         logLimit = logSize;
     }
 
-    public void logEntry(Openrtb.BidRequest bidRequest) {
+    public void logEntry(Openrtb.BidRequest bidRequest, String prefix) {
         if(bidRequest.getDevice() != null) {
             if(bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
+                System.out.println(prefix);
                 System.out.println(bidRequest.toString());
                 System.out.println("=====");
             }
@@ -67,7 +68,7 @@ public class LookupService {
         macroSegment = new Segments(0, "", "", "", new Advertiser(0, ""));
 
         if(enableLogs) {
-            logEntry(bidRequest);
+            logEntry(bidRequest, "Cusotm Bidding Agent logs");
         }
         Boolean foundValue = false;
         if(bidRequestUser.getDataCount() != 0) {
@@ -82,7 +83,7 @@ public class LookupService {
                                 foundValue = true;
                             }
                             if(enableLogs) {
-                                System.out.println("*** Found entry for ".concat(segItem.getName()).concat(" with auction id").concat(bidRequest.getExt().getAuctionidStr()));
+                                System.out.println("*** Found entry for agent ".concat(segItem.getName()).concat(" with auction id").concat(bidRequest.getExt().getAuctionidStr()));
                             }
 
                         }
@@ -121,7 +122,7 @@ public class LookupService {
         macroSegment = new Segments(0, "", "", "", new Advertiser(0, ""));
 
         if(enableLogs) {
-            logEntry(bidRequest);
+            logEntry(bidRequest, "augmenter");
         }
 
         if(bidRequestUser.getDataCount() != 0) {
@@ -136,7 +137,7 @@ public class LookupService {
                         }
                         segBuilder.setId(segEntity.getKey());
                         segBuilder.setValue(segEntity.getValue());
-                        System.out.println("*** Found entry for ".concat(segItem.getName()).concat(" with auction id").concat(bidRequest.getId()));
+                        System.out.println("*** Found entry for augmenter".concat(segItem.getName()).concat(" with auction id").concat(bidRequest.getId()));
                         segList.add(segBuilder.build());
                     }
                 }
