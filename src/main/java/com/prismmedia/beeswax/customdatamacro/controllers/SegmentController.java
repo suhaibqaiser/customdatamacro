@@ -89,6 +89,26 @@ public class SegmentController {
 
     }
 
+    @PostMapping("/in/custombidagent")
+    @Consumes("application/x-protobuf")
+    @Produces("application/x-protobuf")
+    public byte[] processInsecureCustomBidAgent(@RequestBody byte[] body, HttpServletResponse response) throws IOException {
+
+        Request.BidAgentRequest request = Request.BidAgentRequest.parseFrom(body);
+
+        Request.BidAgentResponse macroResponse = lookupService.parseSegmentsFromCustomBid(request.getBidRequest());
+
+        if(macroResponse == null || macroResponse.getBidsList().isEmpty()) {
+            response.setStatus(204);
+            return null;
+        } else {
+            return macroResponse.toByteArray();
+        }
+
+
+
+    }
+
     @PostMapping("/custombidagent")
     @Consumes("application/x-protobuf")
     @Produces("application/x-protobuf")
