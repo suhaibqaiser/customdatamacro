@@ -94,28 +94,33 @@ public class LookupService {
                 }
             }
             if(foundValue) {
-                if(macroSegment.getValue() != null && !macroSegment.getValue().isEmpty()) {
-                    macroBuilder.setName(macroSegment.getAdvertiser().getName().replace(" ", ""));
-                    macroBuilder.setValue(macroSegment.getValue());
-                    creativeBuilder.addDynamicMacros(macroBuilder.build());
-                    if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
-                        System.out.println("*** Dynamic Macro ".concat(macroBuilder.build().toString()));
+                try {
+                    if(macroSegment.getValue() != null && !macroSegment.getValue().isEmpty()) {
+                        macroBuilder.setName(macroSegment.getAdvertiser().getName().replace(" ", ""));
+                        macroBuilder.setValue(macroSegment.getValue());
+                        creativeBuilder.addDynamicMacros(macroBuilder.build());
+                        if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
+                            System.out.println("*** Dynamic Macro ".concat(macroBuilder.build().toString()));
+                        }
                     }
-                }
-                if(macroSegment.getFeedRowId() != null && !macroSegment.getFeedRowId().isEmpty()) {
-                    macroBuilder = Request.BidAgentResponse.Creative.Macro.newBuilder();
-                    macroBuilder.setName(macroSegment.getAdvertiser().getName().replace(" ", "").concat("FeedRowID"));
-                    macroBuilder.setValue(macroSegment.getFeedRowId());
-                    creativeBuilder.addDynamicMacros(macroBuilder.build());
-                    if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
-                        System.out.println("*** Dynamic Macro FeedRow ".concat(macroBuilder.build().toString()));
+                    if(macroSegment.getFeedRowId() != null && !macroSegment.getFeedRowId().isEmpty()) {
+                        macroBuilder = Request.BidAgentResponse.Creative.Macro.newBuilder();
+                        macroBuilder.setName(macroSegment.getAdvertiser().getName().replace(" ", "").concat("FeedRowID"));
+                        macroBuilder.setValue(macroSegment.getFeedRowId());
+                        creativeBuilder.addDynamicMacros(macroBuilder.build());
+                        if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
+                            System.out.println("*** Dynamic Macro FeedRow ".concat(macroBuilder.build().toString()));
+                        }
                     }
+                    creativeBuilder.setId(310);
+                    bidBuilder.setCreative(creativeBuilder.build());
+                    bidBuilder.setBidPriceMicros(5000);
+                    bidBuilder.setLineItemId(126);
+                    responseBuilder.addBids(bidBuilder.build());
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                creativeBuilder.setId(310);
-                bidBuilder.setCreative(creativeBuilder.build());
-                bidBuilder.setBidPriceMicros(5000);
-                bidBuilder.setLineItemId(126);
-                responseBuilder.addBids(bidBuilder.build());
+
             }
         }
 
