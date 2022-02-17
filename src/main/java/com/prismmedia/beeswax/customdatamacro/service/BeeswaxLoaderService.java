@@ -56,7 +56,7 @@ public class BeeswaxLoaderService {
 
             boolean next = true;
 
-            segRepo.deleteAllFromSegments();
+            //segRepo.deleteAllFromSegments();
 
             while(beeswaxUrl != null && !beeswaxUrl.isEmpty()) {
                 System.out.println("Making REST call to Beeswax = " + beeswaxUrl);
@@ -81,7 +81,7 @@ public class BeeswaxLoaderService {
                             segments.setValue(itemNode.get("alternative_id").textValue());
                             segments.setAdvertiser(advertiserMap.get(itemNode.get("advertiser_id").asInt()));
                             segments.setFeedRowId(feedRowMap.get(segments.getId().toString()));
-                            segRepo.save(segments);
+                            //segRepo.save(segments);
                             keyMap.put(segments.getKey(), segments);
                             rowCount++;
                         }
@@ -148,10 +148,7 @@ public class BeeswaxLoaderService {
 
     public ConcurrentHashMap<String, Segments> getSegKeyMap() {
         if(segKeyMap == null) {
-            new Thread(() -> {
-                loadSegmentTree();
-            }).start();
-            segKeyMap = segRepo.fetchSegmentsKeyMap();
+            loadSegmentTree();
         }
         return segKeyMap;
     }
