@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.prismmedia.beeswax.customdatamacro.entity.Advertiser;
+import com.prismmedia.beeswax.customdatamacro.entity.LineItem;
 import com.prismmedia.beeswax.customdatamacro.entity.Segments;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import javax.sound.sampled.Line;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -40,6 +42,10 @@ public class BeeswaxLoaderService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void loadBiddingStrategy() throws IOException {
+        getBiddingStrategy();
     }
 
     public void loadSegmentTree() {
@@ -112,6 +118,25 @@ public class BeeswaxLoaderService {
         String body = mapper.writeValueAsString(authBody);
         HttpEntity<String> httpEntity = new HttpEntity <String> (body, httpHeaders);
         restTemplate.postForObject(authUrl, httpEntity, String.class);
+    }
+
+    public ConcurrentHashMap<Integer, LineItem> getBiddingStrategy() throws IOException {
+        ConcurrentHashMap<Integer, LineItem> lineItemConcurrentHashMap = new ConcurrentHashMap<Integer, LineItem>();
+        authenticate();
+        String biddingStrategyUrl = "https://prism.api.beeswax.com/rest/line_item?bidding_strategy=PRISM_TEST_STRATEGY";
+        String response = restTemplate.getForObject(biddingStrategyUrl, String.class);
+        JsonNode node = mapper.createParser(response).readValueAsTree();
+        ArrayNode results = node.withArray("payload");
+        if(results != null && !results.isEmpty()) {
+            for(JsonNode itemNode : results) {
+                LineItem lineItem = new LineItem();
+                lineItem.setId(itemNode.get("line_item_id").intValue());
+                lineItem.setBudget(itemNode.get("line_item_budget").floatValue());
+                lineItem.setActive(itemNode.get("active").asBoolean());
+                lineItemConcurrentHashMap.put(lineItem.getId(), lineItem);
+            }
+        }
+        return lineItemConcurrentHashMap;
     }
 
     public ConcurrentHashMap<Integer, Advertiser> loadAdvertisersFromBeeswax() throws IOException {
