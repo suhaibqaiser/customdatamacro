@@ -3,6 +3,9 @@ package com.prismmedia.beeswax.customdatamacro.entity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Segments {
 
     private Integer id;
@@ -17,15 +20,19 @@ public class Segments {
 
     private String feedRowId;
 
+    private List<LineItem> lineItemList;
+
     public Segments(Integer id, String key, String name, String value, Advertiser advertiser) {
         this.id = id;
         this.key = key;
         this.name = name;
         this.value = value;
         this.advertiser = advertiser;
+        this.lineItemList = new ArrayList<LineItem>();
     }
 
     public Segments() {
+        this.lineItemList = new ArrayList<LineItem>();
     }
 
     public Segments(final JsonNode segment) {
@@ -41,6 +48,7 @@ public class Segments {
         if(segment.get("key") != null) {
             this.key = segment.get("key").textValue();
         }
+        this.lineItemList = new ArrayList<LineItem>();
     }
 
 
@@ -61,6 +69,14 @@ public class Segments {
             value = "";
         }
         this.value = value;
+    }
+
+    public List<LineItem> getLineItemList() {
+        return lineItemList;
+    }
+
+    public void setLineItemList(List<LineItem> lineItemList) {
+        this.lineItemList = lineItemList;
     }
 
 

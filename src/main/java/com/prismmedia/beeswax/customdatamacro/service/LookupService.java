@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.prismmedia.beeswax.customdatamacro.entity.Advertiser;
+import com.prismmedia.beeswax.customdatamacro.entity.LineItem;
 import com.prismmedia.beeswax.customdatamacro.entity.Segments;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -93,30 +94,33 @@ public class LookupService {
                     break;
                 }
             }
-            if(foundValue) {
+            if(foundValue && macroSegment.getLineItemList() != null && !macroSegment.getLineItemList().isEmpty()) {
                 try {
-                    if(macroSegment.getValue() != null && !macroSegment.getValue().isEmpty()) {
-                        macroBuilder.setName(macroSegment.getAdvertiser().getName().replace(" ", ""));
-                        macroBuilder.setValue(macroSegment.getValue());
-                        creativeBuilder.addDynamicMacros(macroBuilder.build());
-                        if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
-                            System.out.println("*** Dynamic Macro ".concat(macroBuilder.build().toString()));
+                    for(LineItem lineItem : macroSegment.getLineItemList()) {
+                        if(macroSegment.getValue() != null && !macroSegment.getValue().isEmpty()) {
+                            macroBuilder.setName(macroSegment.getAdvertiser().getName().replace(" ", ""));
+                            macroBuilder.setValue(macroSegment.getValue());
+                            creativeBuilder.addDynamicMacros(macroBuilder.build());
+                            if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
+                                System.out.println("*** Dynamic Macro ".concat(macroBuilder.build().toString()));
+                            }
                         }
-                    }
-                    if(macroSegment.getFeedRowId() != null && !macroSegment.getFeedRowId().isEmpty()) {
-                        macroBuilder = Request.BidAgentResponse.Creative.Macro.newBuilder();
-                        macroBuilder.setName(macroSegment.getAdvertiser().getName().replace(" ", "").concat("FeedRowID"));
-                        macroBuilder.setValue(macroSegment.getFeedRowId());
-                        creativeBuilder.addDynamicMacros(macroBuilder.build());
-                        if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
-                            System.out.println("*** Dynamic Macro FeedRow ".concat(macroBuilder.build().toString()));
+                        if(macroSegment.getFeedRowId() != null && !macroSegment.getFeedRowId().isEmpty()) {
+                            macroBuilder = Request.BidAgentResponse.Creative.Macro.newBuilder();
+                            macroBuilder.setName(macroSegment.getAdvertiser().getName().replace(" ", "").concat("FeedRowID"));
+                            macroBuilder.setValue(macroSegment.getFeedRowId());
+                            creativeBuilder.addDynamicMacros(macroBuilder.build());
+                            if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
+                                System.out.println("*** Dynamic Macro FeedRow ".concat(macroBuilder.build().toString()));
+                            }
                         }
+                        creativeBuilder.setId(310);
+                        bidBuilder.setCreative(creativeBuilder.build());
+                        bidBuilder.setBidPriceMicros(5000);
+                        bidBuilder.setLineItemId(128);
+                        responseBuilder.addBids(bidBuilder.build());
                     }
-                    creativeBuilder.setId(310);
-                    bidBuilder.setCreative(creativeBuilder.build());
-                    bidBuilder.setBidPriceMicros(5000);
-                    bidBuilder.setLineItemId(128);
-                    responseBuilder.addBids(bidBuilder.build());
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.prismmedia.beeswax.customdatamacro.entity.Advertiser;
+import com.prismmedia.beeswax.customdatamacro.entity.Creative;
 import com.prismmedia.beeswax.customdatamacro.entity.LineItem;
 import com.prismmedia.beeswax.customdatamacro.entity.Segments;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +17,10 @@ import org.springframework.stereotype.Component;
 import javax.sound.sampled.Line;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -45,7 +48,7 @@ public class BeeswaxLoaderService {
     }
 
     public void loadBiddingStrategy() throws IOException {
-        getBiddingStrategy();
+        authenticate();
     }
 
     public void loadSegmentTree() {
@@ -97,6 +100,8 @@ public class BeeswaxLoaderService {
             }
             if(!keyMap.isEmpty()) {
                 segKeyMap = keyMap;
+                System.out.println("Populating Line Items ... this may take time");
+                populateActiveLineItems();
                 System.out.println("Replaced values of Segment Maps in memory from Beeswax system");
             }
             System.out.println("Parsing completed with total count " +  rowCount + " time = " + sdf.format(new Date()));
@@ -120,10 +125,9 @@ public class BeeswaxLoaderService {
         restTemplate.postForObject(authUrl, httpEntity, String.class);
     }
 
-    public ConcurrentHashMap<Integer, LineItem> getBiddingStrategy() throws IOException {
-        ConcurrentHashMap<Integer, LineItem> lineItemConcurrentHashMap = new ConcurrentHashMap<Integer, LineItem>();
-        authenticate();
-        String biddingStrategyUrl = "https://prism.api.beeswax.com/rest/line_item?bidding_strategy=PRISM_TEST_STRATEGY";
+    public void populateActiveLineItems() throws IOException {
+        final String prismTestStrategy = "PRISM_TEST_STRATEGY";
+        String biddingStrategyUrl = "https://prism.api.beeswax.com/rest/line_item?active=1";
         String response = restTemplate.getForObject(biddingStrategyUrl, String.class);
         JsonNode node = mapper.createParser(response).readValueAsTree();
         ArrayNode results = node.withArray("payload");
@@ -133,10 +137,98 @@ public class BeeswaxLoaderService {
                 lineItem.setId(itemNode.get("line_item_id").intValue());
                 lineItem.setBudget(itemNode.get("line_item_budget").floatValue());
                 lineItem.setActive(itemNode.get("active").asBoolean());
-                lineItemConcurrentHashMap.put(lineItem.getId(), lineItem);
+                lineItem.setTargetExpressionId(itemNode.get("targeting_expression_id").intValue());
+                lineItem.setBiddingStrategy(itemNode.get("bidding").get("bidding_strategy").textValue());
+                if(prismTestStrategy.equalsIgnoreCase(lineItem.getBiddingStrategy()) && lineItem.getActive()) {
+                    populateCreatives(lineItem);
+                    List<String> segItemList = getSegmentIds(lineItem.getTargetExpressionId().toString());
+                    System.out.println("Line Item: " + lineItem.getId().toString() + " - " + segItemList);
+                    if(segItemList != null && !segItemList.isEmpty()) {
+                        for(String segId : segItemList) {
+                            Segments segment = segKeyMap.get(segId);
+                            if(segment != null) {
+                                segment.getLineItemList().add(lineItem);
+                            }
+                        }
+                    }
+
+                }
+            }
+
+        }
+    }
+
+
+
+    public void populateCreatives(final LineItem lineItem) throws IOException {
+        String biddingStrategyUrl = "https://prism.api.beeswax.com/rest/creative_line_item?line_item_id=" + lineItem.getId().toString();
+        String response = restTemplate.getForObject(biddingStrategyUrl, String.class);
+        JsonNode node = mapper.createParser(response).readValueAsTree();
+        ArrayNode results = node.withArray("payload");
+        if(results != null && !results.isEmpty()) {
+            for (JsonNode itemNode : results) {
+                if(itemNode.get("active").booleanValue()) {
+                    Integer creativeId = itemNode.get("creative_id").intValue();
+                    Creative creative = getCreative(creativeId.toString());
+                    if(creative != null) {
+                        lineItem.getCreativeList().add(creative);
+                    }
+                }
             }
         }
-        return lineItemConcurrentHashMap;
+    }
+
+    public Creative getCreative(final String creativeId) throws IOException {
+        Creative creative = null;
+        String biddingStrategyUrl = "https://prism.api.beeswax.com/rest/creative?creative_id=" + creativeId;
+        System.out.println("Looking up Creative with url: " + biddingStrategyUrl);
+        String response = restTemplate.getForObject(biddingStrategyUrl, String.class);
+        JsonNode node = mapper.createParser(response).readValueAsTree();
+        ArrayNode results = node.withArray("payload");
+        if(results != null && !results.isEmpty()) {
+            for (JsonNode itemNode : results) {
+                if(itemNode.get("active").booleanValue()) {
+                    creative = new Creative();
+                    creative.setId(itemNode.get("creative_id").intValue());
+                    creative.setName(itemNode.get("creative_name").toString());
+                    creative.setHeight(itemNode.get("height").intValue());
+                    creative.setWidth(itemNode.get("width").intValue());
+                    creative.setType(itemNode.get("creative_type").intValue());
+                    break;
+                }
+            }
+        }
+        return creative;
+    }
+
+    public List<String> getSegmentIds(final String targetExpressionId) throws IOException {
+        List<String> segIdList = new ArrayList<String>();
+        try {
+
+            String biddingStrategyUrl = "https://prism.api.beeswax.com/rest/v2/targeting-expressions?id=" + targetExpressionId;
+            String response = restTemplate.getForObject(biddingStrategyUrl, String.class);
+            JsonNode node = mapper.createParser(response).readValueAsTree();
+            ArrayNode results = node.withArray("results");
+
+            if(results != null && !results.isEmpty()) {
+
+                for(JsonNode itemNode : results) {
+                    if(itemNode.findPath("modules") != null && itemNode.findPath("modules").findPath("user") != null) {
+                        ArrayNode segments = itemNode.get("modules").get("user").get("all").get("segment").withArray("any");
+                        if(segments != null) {
+                            for(JsonNode segItem : segments) {
+                                segIdList.add(segItem.get("value").textValue());
+                            }
+                        }
+                    }
+
+                }
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return segIdList;
     }
 
     public ConcurrentHashMap<Integer, Advertiser> loadAdvertisersFromBeeswax() throws IOException {
@@ -181,5 +273,37 @@ public class BeeswaxLoaderService {
 
         }
         return segKeyMap;
+    }
+
+    @Deprecated
+    public void populateActiveLineItemsFromInputStrategy() throws IOException {
+        String biddingStrategyUrl = "https://prism.api.beeswax.com/rest/line_item?bidding_strategy=PRISM_TEST_STRATEGY";
+        String response = restTemplate.getForObject(biddingStrategyUrl, String.class);
+        JsonNode node = mapper.createParser(response).readValueAsTree();
+        ArrayNode results = node.withArray("payload");
+        if(results != null && !results.isEmpty()) {
+            for(JsonNode itemNode : results) {
+                LineItem lineItem = new LineItem();
+                lineItem.setId(itemNode.get("line_item_id").intValue());
+                lineItem.setBudget(itemNode.get("line_item_budget").floatValue());
+                lineItem.setActive(itemNode.get("active").asBoolean());
+                lineItem.setTargetExpressionId(itemNode.get("targeting_expression_id").intValue());
+                if(lineItem.getActive()) {
+                    populateCreatives(lineItem);
+                    List<String> segItemList = getSegmentIds(lineItem.getTargetExpressionId().toString());
+                    System.out.println("Line Item: " + lineItem.getId().toString() + " - " + segItemList);
+                    if(segItemList != null && !segItemList.isEmpty()) {
+                        for(String segId : segItemList) {
+                            Segments segment = segKeyMap.get(segId);
+                            if(segment != null) {
+                                segment.getLineItemList().add(lineItem);
+                            }
+                        }
+                    }
+
+                }
+            }
+
+        }
     }
 }

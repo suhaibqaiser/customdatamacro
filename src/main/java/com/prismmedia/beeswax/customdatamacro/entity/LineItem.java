@@ -1,5 +1,8 @@
 package com.prismmedia.beeswax.customdatamacro.entity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class LineItem {
 
     private Integer id;
@@ -10,6 +13,39 @@ public class LineItem {
 
     private Float budget;
 
+    private List<Creative> creativeList;
+
+    private Integer targetExpressionId;
+
+    private String biddingStrategy;
+
+    public String getBiddingStrategy() {
+        return biddingStrategy;
+    }
+
+    public void setBiddingStrategy(String biddingStrategy) {
+        this.biddingStrategy = biddingStrategy;
+    }
+
+    public Integer getTargetExpressionId() {
+        return targetExpressionId;
+    }
+
+    public void setTargetExpressionId(Integer targetExpressionId) {
+        this.targetExpressionId = targetExpressionId;
+    }
+
+    public LineItem() {
+        creativeList = new ArrayList<Creative>();
+    }
+
+    public List<Creative> getCreativeList() {
+        return creativeList;
+    }
+
+    public void setCreativeList(List<Creative> creativeList) {
+        this.creativeList = creativeList;
+    }
 
     public Integer getId() {
         return id;
