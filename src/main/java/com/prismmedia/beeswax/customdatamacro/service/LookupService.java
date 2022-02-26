@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.prismmedia.beeswax.customdatamacro.entity.Advertiser;
+import com.prismmedia.beeswax.customdatamacro.entity.Creative;
 import com.prismmedia.beeswax.customdatamacro.entity.LineItem;
 import com.prismmedia.beeswax.customdatamacro.entity.Segments;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -97,6 +98,8 @@ public class LookupService {
             if(foundValue && macroSegment.getLineItemList() != null && !macroSegment.getLineItemList().isEmpty()) {
                 try {
                     for(LineItem lineItem : macroSegment.getLineItemList()) {
+                        bidBuilder.setLineItemId(lineItem.getId());
+                        bidBuilder.setBidPriceMicros(lineItem.getBudget().longValue());
                         if(macroSegment.getValue() != null && !macroSegment.getValue().isEmpty()) {
                             macroBuilder.setName(macroSegment.getAdvertiser().getName().replace(" ", ""));
                             macroBuilder.setValue(macroSegment.getValue());
@@ -114,11 +117,33 @@ public class LookupService {
                                 System.out.println("*** Dynamic Macro FeedRow ".concat(macroBuilder.build().toString()));
                             }
                         }
-                        creativeBuilder.setId(310);
-                        bidBuilder.setCreative(creativeBuilder.build());
-                        bidBuilder.setBidPriceMicros(5000);
-                        bidBuilder.setLineItemId(128);
-                        responseBuilder.addBids(bidBuilder.build());
+                        Openrtb.BidRequest.Impression selImp = null;
+
+                        if(bidRequest != null && bidRequest.getImpList() != null && !bidRequest.getImpList().isEmpty()) {
+                            /*for(Openrtb.BidRequest.Impression impItem : bidRequest.getImpList()) {
+                                if (impItem.getBanner() != null && impItem.getBanner().getH() > selImp.getBanner().getH()){
+                                    selImp = impItem;
+
+                                }
+                            }*/
+                            selImp = bidRequest.getImp(0);
+                        }
+                        Creative selCreative = new Creative();
+                        selCreative.setWidth(0);
+                        selCreative.setHeight(0);
+                        boolean foundCreative = false;
+                        if(selImp != null && lineItem.getCreativeList() != null) {
+                            for(Creative creativeItem : lineItem.getCreativeList()) {
+                                if(creativeItem.getWidth() == selImp.getBanner().getW() && creativeItem.getHeight() == selImp.getBanner().getH()) {
+                                    creativeBuilder.setId(creativeItem.getId());
+                                    bidBuilder.setCreative(creativeBuilder.build());
+                                    responseBuilder.addBids(bidBuilder.build());
+                                    foundCreative = true;
+                                    break;
+                                }
+                            }
+                        }
+
                     }
 
                 } catch (Exception e) {
