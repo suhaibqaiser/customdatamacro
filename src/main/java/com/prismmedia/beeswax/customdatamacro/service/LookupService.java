@@ -54,7 +54,7 @@ public class LookupService {
         if(bidRequest.getDevice() != null) {
             if(bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
                 System.out.println(prefix);
-                System.out.println(bidRequest.toString());
+                System.out.println(bidRequest.toString().replace("\n", "$$"));
                 System.out.println("=====");
             }
         }
@@ -80,7 +80,7 @@ public class LookupService {
                     for (Openrtb.BidRequest.Data.Segment segItem : protoSegArray) {
                         Segments segEntity = lookupSegmentFromDB(segItem);
                         if (segEntity != null && segEntity.getId() != null) {
-                            if (macroSegment.getId() < segEntity.getId() && segEntity.getName().contains("Product view")) {
+                            if (segEntity.getName().contains("Product view") && segEntity.getLineItemList() != null && !segEntity.getLineItemList().isEmpty()) {
                                 macroSegment = segEntity;
                                 if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
                                     System.out.println("*** Found entry for agent ".concat(segEntity.getKey()).concat(" with auction id").concat(bidRequest.getExt().getAuctionidStr()));
@@ -139,7 +139,7 @@ public class LookupService {
                                     bidBuilder.setCreative(creativeBuilder.build());
                                     responseBuilder.addBids(bidBuilder.build());
                                     if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
-                                        System.out.println("*** Dynamic Macro Creative: \n".concat(bidBuilder.build().toString()));
+                                        System.out.println("*** Dynamic Macro Creative: \n".concat(bidBuilder.build().toString().replace("\n", "$$")));
                                     }
                                     foundCreative = true;
                                     break;
@@ -160,6 +160,7 @@ public class LookupService {
 
     }
 
+    @Deprecated
     public Augmentor.AugmentorResponse parseSegmentsFromProtoText(Openrtb.BidRequest bidRequest) throws InvalidProtocolBufferException {
         Augmentor.AugmentorResponse.Builder responseBuilder = Augmentor.AugmentorResponse.newBuilder();
         List<Augmentor.AugmentorResponse.Segment> segList = new ArrayList<Augmentor.AugmentorResponse.Segment>();
