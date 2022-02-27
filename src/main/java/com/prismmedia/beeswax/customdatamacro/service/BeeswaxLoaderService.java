@@ -139,7 +139,9 @@ public class BeeswaxLoaderService {
                 lineItem.setActive(itemNode.get("active").asBoolean());
                 lineItem.setTargetExpressionId(itemNode.get("targeting_expression_id").intValue());
                 lineItem.setBiddingStrategy(itemNode.get("bidding").get("bidding_strategy").textValue());
+
                 if(prismTestStrategy.equalsIgnoreCase(lineItem.getBiddingStrategy()) && lineItem.getActive()) {
+                    lineItem.setCpmBid(itemNode.get("bidding").get("values").get("bid_cpm").textValue());
                     populateCreatives(lineItem);
                     List<String> segItemList = getSegmentIds(lineItem.getTargetExpressionId().toString());
                     System.out.println("Line Item: " + lineItem.getId().toString() + " - " + segItemList);

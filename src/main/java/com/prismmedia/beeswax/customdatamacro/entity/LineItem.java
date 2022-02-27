@@ -13,6 +13,8 @@ public class LineItem {
 
     private Float budget;
 
+    private String cpmBid;
+
     private List<Creative> creativeList;
 
     private Integer targetExpressionId;
@@ -31,6 +33,13 @@ public class LineItem {
         return targetExpressionId;
     }
 
+    public String getCpmBid() {
+        return cpmBid;
+    }
+
+    public void setCpmBid(String cpmBid) {
+        this.cpmBid = cpmBid;
+    }
     public void setTargetExpressionId(Integer targetExpressionId) {
         this.targetExpressionId = targetExpressionId;
     }
@@ -77,5 +86,13 @@ public class LineItem {
 
     public void setBudget(Float budget) {
         this.budget = budget;
+    }
+
+    public long getCpmBidLong() {
+        try {
+            return Long.parseLong(cpmBid);
+        } catch (Exception e) {
+            return 0;
+        }
     }
 }

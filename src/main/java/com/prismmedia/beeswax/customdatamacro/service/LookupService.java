@@ -53,6 +53,7 @@ public class LookupService {
     public void logEntry(Openrtb.BidRequest bidRequest, String prefix) {
         if(bidRequest.getDevice() != null) {
             if(bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
+                System.out.println("=====");
                 System.out.println(prefix);
                 System.out.println(bidRequest.toString().replace("\n", "$$"));
                 System.out.println("=====");
@@ -99,7 +100,7 @@ public class LookupService {
                 try {
                     for(LineItem lineItem : macroSegment.getLineItemList()) {
                         bidBuilder.setLineItemId(lineItem.getId());
-                        bidBuilder.setBidPriceMicros(lineItem.getBudget().longValue());
+                        bidBuilder.setBidPriceMicros(lineItem.getCpmBidLong() * 1000);
                         if(macroSegment.getValue() != null && !macroSegment.getValue().isEmpty()) {
                             macroBuilder.setName(macroSegment.getAdvertiser().getName().replace(" ", ""));
                             macroBuilder.setValue(macroSegment.getValue());
