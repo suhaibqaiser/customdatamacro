@@ -37,7 +37,7 @@ public class BeeswaxLoaderService {
     @Autowired
     private SegmentRepo segRepo;
 
-    @Scheduled(cron = "*/5 * * * * ?")
+    @Scheduled(cron = "0 0/10 * * * ?")
     public void task() {
         System.out.println("Scheduler (cron expression) task with duration : " + sdf.format(new Date()));
         try {

@@ -104,18 +104,18 @@ public class LookupService {
                             macroBuilder.setName(macroSegment.getAdvertiser().getName().replace(" ", ""));
                             macroBuilder.setValue(macroSegment.getValue());
                             creativeBuilder.addDynamicMacros(macroBuilder.build());
-                            if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
+                            /*if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
                                 System.out.println("*** Dynamic Macro ".concat(macroBuilder.build().toString()));
-                            }
+                            }*/
                         }
                         if(macroSegment.getFeedRowId() != null && !macroSegment.getFeedRowId().isEmpty()) {
                             macroBuilder = Request.BidAgentResponse.Creative.Macro.newBuilder();
                             macroBuilder.setName(macroSegment.getAdvertiser().getName().replace(" ", "").concat("FeedRowID"));
                             macroBuilder.setValue(macroSegment.getFeedRowId());
                             creativeBuilder.addDynamicMacros(macroBuilder.build());
-                            if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
+                            /*if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
                                 System.out.println("*** Dynamic Macro FeedRow ".concat(macroBuilder.build().toString()));
-                            }
+                            }*/
                         }
                         Openrtb.BidRequest.Impression selImp = null;
 
@@ -138,6 +138,9 @@ public class LookupService {
                                     creativeBuilder.setId(creativeItem.getId());
                                     bidBuilder.setCreative(creativeBuilder.build());
                                     responseBuilder.addBids(bidBuilder.build());
+                                    if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
+                                        System.out.println("*** Dynamic Macro Creative: \n".concat(bidBuilder.build().toString()));
+                                    }
                                     foundCreative = true;
                                     break;
                                 }
