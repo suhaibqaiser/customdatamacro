@@ -2,6 +2,7 @@ package com.prismmedia.beeswax.customdatamacro.controllers;
 
 import com.beeswax.augment.Augmentor;
 import com.beeswax.bid.Request;
+import com.prismmedia.beeswax.customdatamacro.entity.Deal;
 import com.prismmedia.beeswax.customdatamacro.entity.Segments;
 import com.prismmedia.beeswax.customdatamacro.service.BeeswaxLoaderService;
 import com.prismmedia.beeswax.customdatamacro.service.LookupService;
@@ -42,9 +43,21 @@ public class SegmentController {
     @GetMapping("/segments")
     @Consumes("application/json")
     @Produces("application/json")
-    public Collection<Segments> fetchBidRequestFromJson() {
+    public Collection<Segments> loadSegments() {
         if(loaderService.getSegKeyMap() != null) {
             return loaderService.getSegKeyMap().values();
+        } else {
+            return null;
+        }
+
+    }
+
+    @GetMapping("/deals")
+    @Consumes("application/json")
+    @Produces("application/json")
+    public Collection<Deal> loadDeals() {
+        if(loaderService.getDealsMap() != null) {
+            return loaderService.getDealsMap().values();
         } else {
             return null;
         }

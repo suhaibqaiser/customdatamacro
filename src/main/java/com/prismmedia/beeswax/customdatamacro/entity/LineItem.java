@@ -90,7 +90,7 @@ public class LineItem {
 
     public long getCpmBidLong() {
         try {
-            return Long.parseLong(cpmBid);
+            return Double.valueOf(Double.parseDouble(cpmBid) * 1000).longValue();
         } catch (Exception e) {
             return 0;
         }

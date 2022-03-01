@@ -4,10 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.prismmedia.beeswax.customdatamacro.entity.Advertiser;
-import com.prismmedia.beeswax.customdatamacro.entity.Creative;
-import com.prismmedia.beeswax.customdatamacro.entity.LineItem;
-import com.prismmedia.beeswax.customdatamacro.entity.Segments;
+import com.prismmedia.beeswax.customdatamacro.entity.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -29,6 +26,8 @@ public class BeeswaxLoaderService {
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
     private static ConcurrentHashMap<String, Segments> segKeyMap = null;
+
+    private static ConcurrentHashMap<String, Deal> dealsMap = null;
 
     private ObjectMapper mapper = new ObjectMapper();
 
@@ -61,6 +60,7 @@ public class BeeswaxLoaderService {
             authenticate();
             advertiserMap = loadAdvertisersFromBeeswax();
             feedRowMap = loadFeedRowIdMap();
+            dealsMap = loadDeals();
             String beeswaxUrl = "https://prism.api.beeswax.com/rest/v2/ref/segment-tree";
 
             boolean next = true;
@@ -160,7 +160,41 @@ public class BeeswaxLoaderService {
         }
     }
 
+    public ConcurrentHashMap<String, Deal> loadDeals() throws IOException {
+        System.out.println("Loading from Beeswax Deals start time = " + sdf.format(new Date()));
+        ConcurrentHashMap<String, Deal> dealItemsMap = new ConcurrentHashMap<String, Deal>();
+        try {
 
+            String beeswaxUrl = "https://prism.api.beeswax.com/rest/v2/deals";
+            Integer rowCount = 0;
+            boolean next = true;
+
+            while(beeswaxUrl != null && !beeswaxUrl.isEmpty()) {
+                System.out.println("Making deals call to Beeswax = " + beeswaxUrl);
+                String response = restTemplate.getForObject(beeswaxUrl, String.class);
+                JsonNode node = mapper.createParser(response).readValueAsTree();
+                beeswaxUrl = node.get("next").textValue();
+
+                ArrayNode results = node.withArray("results");
+                if(results != null && !results.isEmpty()) {
+                    for(JsonNode itemNode : results) {
+                        Deal deal = new Deal();
+                        rowCount++;
+                        deal.setId(itemNode.get("id").intValue());
+                        deal.setDealIdentifier(itemNode.get("deal_id").textValue());
+                        deal.setCpmOverride(itemNode.get("cpm_override").textValue());
+                        deal.setInventorySourceKey(itemNode.get("inventory_source_key").textValue());
+                        dealItemsMap.put(deal.getDealIdentifier(), deal);
+                    }
+                }
+            }
+            System.out.println("Deal load completed with total count " +  rowCount + " time = " + sdf.format(new Date()));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            System.out.println("Error occurred in parsing of Segments from Beeswax ...");
+        }
+        return dealItemsMap;
+    }
 
     public void populateCreatives(final LineItem lineItem) throws IOException {
         String biddingStrategyUrl = "https://prism.api.beeswax.com/rest/creative_line_item?line_item_id=" + lineItem.getId().toString();
@@ -275,6 +309,17 @@ public class BeeswaxLoaderService {
 
         }
         return segKeyMap;
+    }
+
+    public ConcurrentHashMap<String, Deal> getDealsMap() {
+        if(dealsMap == null) {
+            synchronized (BeeswaxLoaderService.class) {
+                if(dealsMap == null) {
+                    loadSegmentTree();
+                }
+            }
+        }
+        return dealsMap;
     }
 
     @Deprecated
