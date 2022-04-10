@@ -72,7 +72,7 @@ public class LookupService {
         macroSegment = new Segments(0, "", "", "", new Advertiser(0, ""));
 
         if(enableLogs) {
-            logEntry(bidRequest, "Cusotm Bidding Agent logs");
+            logEntry(bidRequest, "Custom Bidding Agent logs");
         }
         Boolean foundValue = false;
         if(bidRequestUser.getDataCount() != 0) {
@@ -81,7 +81,8 @@ public class LookupService {
                 if(protoSegArray != null) {
                     for (Openrtb.BidRequest.Data.Segment segItem : protoSegArray) {
                         Segments segEntity = lookupSegmentFromDB(segItem);
-                        if (segEntity != null && segEntity.getId() != null) {
+                        Segments thirdPartySegEntity = lookupThirdPartySegmentFromDB(segItem);
+                        if (segEntity != null && segEntity.getKey() != null) {
                             if (segEntity.getName().contains("Product view") && segEntity.getLineItemList() != null && !segEntity.getLineItemList().isEmpty()) {
                                 macroSegment = segEntity;
                                 if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
@@ -89,6 +90,13 @@ public class LookupService {
                                 }
                                 foundValue = true;
                                 break;
+                            }
+                        } else if (thirdPartySegEntity != null && thirdPartySegEntity.getKey() != null && macroSegment.getKey().isEmpty()){
+                            if(thirdPartySegEntity.getLineItemList() != null && !thirdPartySegEntity.getLineItemList().isEmpty()) {
+                                macroSegment = thirdPartySegEntity;
+                                if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
+                                    System.out.println("*** Found entry for agent - third party segment ".concat(thirdPartySegEntity.getKey()).concat(" with auction id").concat(bidRequest.getExt().getAuctionidStr()));
+                                }
                             }
                         }
                     }
@@ -222,6 +230,14 @@ public class LookupService {
         Segments returnSegment = null;
         if(segment != null && loaderService.getSegKeyMap().containsKey(segment.getId())) {
             returnSegment = loaderService.getSegKeyMap().get(segment.getId());
+        }
+        return returnSegment;
+    }
+
+    public Segments lookupThirdPartySegmentFromDB(final Openrtb.BidRequest.Data.Segment segment) {
+        Segments returnSegment = null;
+        if(segment != null && loaderService.getThirdPartySegMap().containsKey(segment.getId())) {
+            returnSegment = loaderService.getThirdPartySegMap().get(segment.getId());
         }
         return returnSegment;
     }

@@ -3,6 +3,7 @@ package com.prismmedia.beeswax.customdatamacro.controllers;
 import com.beeswax.augment.Augmentor;
 import com.beeswax.bid.Request;
 import com.prismmedia.beeswax.customdatamacro.entity.Deal;
+import com.prismmedia.beeswax.customdatamacro.entity.OpenSheet;
 import com.prismmedia.beeswax.customdatamacro.entity.Segments;
 import com.prismmedia.beeswax.customdatamacro.service.BeeswaxLoaderService;
 import com.prismmedia.beeswax.customdatamacro.service.LookupService;
@@ -52,12 +53,36 @@ public class SegmentController {
 
     }
 
+    @GetMapping("/thirdpartysegments")
+    @Consumes("application/json")
+    @Produces("application/json")
+    public Collection<Segments> loadThirdPartySegments() {
+        if(loaderService.getThirdPartySegMap() != null) {
+            return loaderService.getThirdPartySegMap().values();
+        } else {
+            return null;
+        }
+
+    }
+
     @GetMapping("/deals")
     @Consumes("application/json")
     @Produces("application/json")
     public Collection<Deal> loadDeals() {
         if(loaderService.getDealsMap() != null) {
             return loaderService.getDealsMap().values();
+        } else {
+            return null;
+        }
+
+    }
+
+    @GetMapping("/feedrowids")
+    @Consumes("application/json")
+    @Produces("application/json")
+    public Collection<OpenSheet> loadFeedRowMap() {
+        if(loaderService.getFeedRowMap() != null) {
+            return loaderService.getFeedRowMap().values();
         } else {
             return null;
         }

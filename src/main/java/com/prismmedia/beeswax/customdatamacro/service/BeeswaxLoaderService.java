@@ -29,6 +29,12 @@ public class BeeswaxLoaderService {
 
     private static ConcurrentHashMap<String, Deal> dealsMap = null;
 
+    private static ConcurrentHashMap<String, OpenSheet> feedRowMap = null;
+
+    private static ConcurrentHashMap<Integer, Advertiser> advertiserMap = null;
+
+    public static ConcurrentHashMap<String, Segments> thirdPartySegMap = null;
+
     private ObjectMapper mapper = new ObjectMapper();
 
     private RestTemplateWithCookies restTemplate = new RestTemplateWithCookies();
@@ -52,8 +58,8 @@ public class BeeswaxLoaderService {
 
     public void loadSegmentTree() {
         ConcurrentHashMap<String, Segments> keyMap = new ConcurrentHashMap<String, Segments>();
-        ConcurrentHashMap<Integer, Advertiser> advertiserMap = null;
-        ConcurrentHashMap<String, String> feedRowMap = null;
+
+
         Integer rowCount = 1;
         try {
             System.out.println("Loading from Beeswax System start time = " + sdf.format(new Date()));
@@ -64,8 +70,6 @@ public class BeeswaxLoaderService {
             String beeswaxUrl = "https://prism.api.beeswax.com/rest/v2/ref/segment-tree";
 
             boolean next = true;
-
-            //segRepo.deleteAllFromSegments();
 
             while(beeswaxUrl != null && !beeswaxUrl.isEmpty()) {
                 System.out.println("Making REST call to Beeswax = " + beeswaxUrl);
@@ -79,28 +83,27 @@ public class BeeswaxLoaderService {
                         Segments segments = new Segments();
                         segments.setKey(itemNode.get("key").textValue());
                         String type = itemNode.get("type").textValue();
-                        if(type != null && type.equalsIgnoreCase("segment")) {
-                            String[] parsedIds = segments.getKey().split("prism-");
-                            if(parsedIds.length > 0) {
-                                segments.setId(Integer.parseInt(parsedIds[1]));
-                            } else {
-                                segments.setId(rowCount);
-                            }
-                            segments.setName(itemNode.get("name").textValue());
-                            segments.setValue(itemNode.get("alternative_id").textValue());
-                            segments.setAdvertiser(advertiserMap.get(itemNode.get("advertiser_id").asInt()));
-                            segments.setFeedRowId(feedRowMap.get(segments.getId().toString()));
-                            //segRepo.save(segments);
-                            keyMap.put(segments.getKey(), segments);
-                            rowCount++;
-                        }
 
+                        if(type != null && type.equalsIgnoreCase("segment")) {
+                            OpenSheet openSheet = feedRowMap.get(segments.getKey());
+                            if(openSheet != null) {
+                                segments.setName(itemNode.get("name").textValue());
+                                segments.setAdvertiser(advertiserMap.get(itemNode.get("advertiser_id").asInt()));
+                                segments.setId(openSheet.getSegmentIdIntValue());
+                                segments.setValue(openSheet.getAlternativeId());
+                                segments.setFeedRowId(openSheet.getFeedRowId());
+                                keyMap.put(segments.getKey(), segments);
+                                rowCount++;
+                            }
+                        }
                     }
                 }
             }
             if(!keyMap.isEmpty()) {
                 segKeyMap = keyMap;
                 System.out.println("Populating Line Items ... this may take time");
+                loadThirdPartySegments();
+                System.out.println("Replaced values of Third Party Segment Maps in memory from Beeswax system");
                 populateActiveLineItems();
                 System.out.println("Replaced values of Segment Maps in memory from Beeswax system");
             }
@@ -111,6 +114,53 @@ public class BeeswaxLoaderService {
         }
 
 
+    }
+
+    public void loadThirdPartySegments() {
+        System.out.println("Loading from Third Party Segments start time = " + sdf.format(new Date()));
+        ConcurrentHashMap<String, Segments> thirdPartySegmentsMap = new ConcurrentHashMap<String, Segments>();
+        try {
+            String beeswaxUrl = "https://prism.api.beeswax.com/rest/v2/third-party/segment-search?search=grapeshot";
+            Integer rowCount = 0;
+            boolean next = true;
+
+            while(beeswaxUrl != null && !beeswaxUrl.isEmpty()) {
+                System.out.println("Making third party segments calls to Beeswax = " + beeswaxUrl);
+                String response = restTemplate.getForObject(beeswaxUrl, String.class);
+                JsonNode node = mapper.createParser(response).readValueAsTree();
+                beeswaxUrl = node.get("next").textValue();
+
+                ArrayNode results = node.withArray("results");
+                if(results != null && !results.isEmpty()) {
+                    for(JsonNode itemNode : results) {
+                        Segments segments = new Segments();
+                        segments.setKey(itemNode.get("key").textValue());
+                        String type = itemNode.get("type").textValue();
+
+                        if(type != null && type.equalsIgnoreCase("segment")) {
+                            OpenSheet openSheet = feedRowMap.get(segments.getKey());
+                            if(openSheet != null) {
+                                segments.setName(itemNode.get("name").textValue());
+                                segments.setId(openSheet.getSegmentIdIntValue());
+                                segments.setValue(openSheet.getAlternativeId());
+                                segments.setAdvertiser(advertiserMap.get(openSheet.getAdvertiserIdIntValue()));
+                                segments.setFeedRowId(openSheet.getFeedRowId());
+                                thirdPartySegmentsMap.put(segments.getKey(), segments);
+                                rowCount++;
+                            }
+                        }
+                    }
+                }
+            }
+            if(!thirdPartySegmentsMap.isEmpty()) {
+                thirdPartySegMap = thirdPartySegmentsMap;
+                System.out.println("Third PArty Segments load completed with total count " +
+                        rowCount + " time = " + sdf.format(new Date()));
+            }
+
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void authenticate() throws JsonProcessingException {
@@ -142,10 +192,10 @@ public class BeeswaxLoaderService {
 
                 if(prismTestStrategy.equalsIgnoreCase(lineItem.getBiddingStrategy()) && lineItem.getActive()) {
                     lineItem.setCpmBid(itemNode.get("bidding").get("values").get("bid_cpm").textValue());
-                    populateCreatives(lineItem);
                     List<String> segItemList = getSegmentIds(lineItem.getTargetExpressionId().toString());
-                    System.out.println("Line Item: " + lineItem.getId().toString() + " - " + segItemList);
+                    System.out.println("PRISM TEST: Line Item: " + lineItem.getId().toString() + " - " + segItemList);
                     if(segItemList != null && !segItemList.isEmpty()) {
+                        populateCreatives(lineItem);
                         for(String segId : segItemList) {
                             Segments segment = segKeyMap.get(segId);
                             if(segment != null) {
@@ -153,7 +203,19 @@ public class BeeswaxLoaderService {
                             }
                         }
                     }
-
+                } else {
+                    lineItem.setCpmBid(itemNode.get("bidding").get("values").get("cpm_bid").textValue());
+                    List<String> segItemList = getSegmentIds(lineItem.getTargetExpressionId().toString());
+                    System.out.println("GENERIC: Line Item: " + lineItem.getId().toString() + " - " + segItemList);
+                    if(segItemList != null && !segItemList.isEmpty()) {
+                        populateCreatives(lineItem);
+                        for(String segId : segItemList) {
+                            Segments segment = thirdPartySegMap.get(segId);
+                            if(segment != null) {
+                                segment.getLineItemList().add(lineItem);
+                            }
+                        }
+                    }
                 }
             }
 
@@ -250,12 +312,15 @@ public class BeeswaxLoaderService {
 
                 for(JsonNode itemNode : results) {
                     if(itemNode.findPath("modules") != null && itemNode.findPath("modules").findPath("user") != null) {
-                        ArrayNode segments = itemNode.get("modules").get("user").get("all").get("segment").withArray("any");
-                        if(segments != null) {
-                            for(JsonNode segItem : segments) {
-                                segIdList.add(segItem.get("value").textValue());
+                        if(itemNode.get("modules") != null && itemNode.get("modules").get("user") != null) {
+                            ArrayNode segments = itemNode.get("modules").get("user").get("all").get("segment").withArray("any");
+                            if(segments != null) {
+                                for(JsonNode segItem : segments) {
+                                    segIdList.add(segItem.get("value").textValue());
+                                }
                             }
                         }
+
                     }
 
                 }
@@ -285,15 +350,21 @@ public class BeeswaxLoaderService {
         return advertiserMap;
     }
 
-    public ConcurrentHashMap<String, String> loadFeedRowIdMap() throws IOException {
-        ConcurrentHashMap<String, String> feedMap = new ConcurrentHashMap<String, String>();
+    public ConcurrentHashMap<String, OpenSheet> loadFeedRowIdMap() throws IOException {
+        ConcurrentHashMap<String, OpenSheet> feedMap = new ConcurrentHashMap<String, OpenSheet>();
         String openSheetUrl = "https://opensheet.elk.sh/1t-bWAQdSeiUJA37gjcyFuXEgyyY1GSw8tRsP8EdatGE/Sheet1";
         System.out.println("Making Advertiser REST call to OpenSheet = " + openSheetUrl);
         String response = restTemplate.getForObject(openSheetUrl, String.class);
         ArrayNode results = mapper.createParser(response).readValueAsTree();
         if(results != null && !results.isEmpty()) {
             for(JsonNode itemNode : results) {
-                feedMap.put(itemNode.get("segment_id").textValue(), itemNode.get("feedRowID").textValue());
+                OpenSheet openSheet = new OpenSheet();
+                openSheet.setId(itemNode.get("id").textValue());
+                openSheet.setAdvertiserId(itemNode.get("advertiser_id").textValue());
+                openSheet.setFeedRowId(itemNode.get("feedRowID").textValue());
+                openSheet.setSegmentId(itemNode.get("segment_id").textValue());
+                openSheet.setAlternativeId(itemNode.get("alternative_id").textValue());
+                feedMap.put(openSheet.getId(), openSheet);
             }
         }
         return feedMap;
@@ -306,9 +377,19 @@ public class BeeswaxLoaderService {
                     loadSegmentTree();
                 }
             }
-
         }
         return segKeyMap;
+    }
+
+    public ConcurrentHashMap<String, OpenSheet> getFeedRowMap() {
+        if(feedRowMap == null) {
+            synchronized (BeeswaxLoaderService.class) {
+                if(feedRowMap == null) {
+                    loadSegmentTree();
+                }
+            }
+        }
+        return feedRowMap;
     }
 
     public ConcurrentHashMap<String, Deal> getDealsMap() {
@@ -320,6 +401,17 @@ public class BeeswaxLoaderService {
             }
         }
         return dealsMap;
+    }
+
+    public ConcurrentHashMap<String, Segments> getThirdPartySegMap() {
+        if(thirdPartySegMap == null) {
+            synchronized (BeeswaxLoaderService.class) {
+                if(thirdPartySegMap == null) {
+                    loadSegmentTree();
+                }
+            }
+        }
+        return thirdPartySegMap;
     }
 
     @Deprecated
