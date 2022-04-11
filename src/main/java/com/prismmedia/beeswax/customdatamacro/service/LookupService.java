@@ -32,8 +32,6 @@ public class LookupService {
 
     private static Integer logLimit = 5;
 
-    private Segments macroSegment = null;
-
     @Autowired
     private SegmentRepo segmentRepo;
 
@@ -69,7 +67,7 @@ public class LookupService {
         if(bidRequest != null && bidRequest.getImpList() != null && !bidRequest.getImpList().isEmpty()) {
             selImp = bidRequest.getImp(0);
         }
-        macroSegment = new Segments(0, "", "", "", new Advertiser(0, ""));
+        Segments macroSegment = null;
 
         if(enableLogs) {
             logEntry(bidRequest, "Custom Bidding Agent logs");
@@ -91,7 +89,7 @@ public class LookupService {
                                 foundValue = true;
                                 break;
                             }
-                        } else if (thirdPartySegEntity != null && thirdPartySegEntity.getKey() != null && macroSegment.getKey().isEmpty()){
+                        } else if (thirdPartySegEntity != null && thirdPartySegEntity.getKey() != null && macroSegment == null){
                             if(thirdPartySegEntity.getLineItemList() != null && !thirdPartySegEntity.getLineItemList().isEmpty()) {
                                 macroSegment = thirdPartySegEntity;
                                 if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
@@ -105,7 +103,7 @@ public class LookupService {
                     break;
                 }
             }
-            if(foundValue && macroSegment.getLineItemList() != null && !macroSegment.getLineItemList().isEmpty()) {
+            if(macroSegment != null && macroSegment.getLineItemList() != null && !macroSegment.getLineItemList().isEmpty()) {
                 try {
                     for(LineItem lineItem : macroSegment.getLineItemList()) {
                         bidBuilder.setLineItemId(lineItem.getId());
@@ -180,7 +178,7 @@ public class LookupService {
         List<Augmentor.AugmentorResponse.Segment> segList = new ArrayList<Augmentor.AugmentorResponse.Segment>();
         Augmentor.AugmentorResponse.Macro.Builder macroBuilder = Augmentor.AugmentorResponse.Macro.newBuilder();
         Openrtb.BidRequest.User bidRequestUser = bidRequest.getUser();
-        macroSegment = new Segments(0, "", "", "", new Advertiser(0, ""));
+        Segments macroSegment = null;
 
         if(enableLogs) {
             logEntry(bidRequest, "augmenter");
@@ -193,7 +191,7 @@ public class LookupService {
                     Augmentor.AugmentorResponse.Segment.Builder segBuilder = Augmentor.AugmentorResponse.Segment.newBuilder();
                     Segments segEntity = lookupSegmentFromDB(segItem);
                     if(segEntity != null) {
-                        if(macroSegment.getId() < segEntity.getId()) {
+                        if(macroSegment == null || macroSegment.getId() < segEntity.getId()) {
                             macroSegment = segEntity;
                         }
                         segBuilder.setId(segEntity.getKey());

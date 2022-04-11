@@ -201,16 +201,7 @@ public class BeeswaxLoaderService {
                             if(segment != null) {
                                 segment.getLineItemList().add(lineItem);
                             }
-                        }
-                    }
-                } else {
-                    lineItem.setCpmBid(itemNode.get("bidding").get("values").get("cpm_bid").textValue());
-                    List<String> segItemList = getSegmentIds(lineItem.getTargetExpressionId().toString());
-                    System.out.println("GENERIC: Line Item: " + lineItem.getId().toString() + " - " + segItemList);
-                    if(segItemList != null && !segItemList.isEmpty()) {
-                        populateCreatives(lineItem);
-                        for(String segId : segItemList) {
-                            Segments segment = thirdPartySegMap.get(segId);
+                            segment = thirdPartySegMap.get(segId);
                             if(segment != null) {
                                 segment.getLineItemList().add(lineItem);
                             }
