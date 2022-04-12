@@ -83,7 +83,7 @@ public class LookupService {
                         if (segEntity != null && segEntity.getKey() != null) {
                             if (segEntity.getName().contains("Product view") && segEntity.getLineItemList() != null && !segEntity.getLineItemList().isEmpty()) {
                                 macroSegment = segEntity;
-                                if(enableLogs && (bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress) || ipAddress == "-1")) {
+                                if(enableLogs && (bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress) || ipAddress.isEmpty())) {
                                     System.out.println("*** Found entry for agent ".concat(segEntity.getKey()).concat(" with auction id").concat(bidRequest.getExt().getAuctionidStr()));
                                 }
                                 foundValue = true;
