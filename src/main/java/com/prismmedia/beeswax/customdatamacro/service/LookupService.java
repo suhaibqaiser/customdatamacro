@@ -47,7 +47,7 @@ public class LookupService {
 
     public void logEntry(Openrtb.BidRequest bidRequest, String prefix) {
         if(bidRequest.getDevice() != null) {
-            if(bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
+            if(bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress) || ipAddress == "-1") {
                 System.out.println("=====");
                 System.out.println(prefix);
                 System.out.println(bidRequest.toString().replace("\n", "$$"));
@@ -83,7 +83,7 @@ public class LookupService {
                         if (segEntity != null && segEntity.getKey() != null) {
                             if (segEntity.getName().contains("Product view") && segEntity.getLineItemList() != null && !segEntity.getLineItemList().isEmpty()) {
                                 macroSegment = segEntity;
-                                if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
+                                if(enableLogs && (bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress) || ipAddress == "-1")) {
                                     System.out.println("*** Found entry for agent ".concat(segEntity.getKey()).concat(" with auction id").concat(bidRequest.getExt().getAuctionidStr()));
                                 }
                                 foundValue = true;
@@ -92,7 +92,7 @@ public class LookupService {
                         } else if (thirdPartySegEntity != null && thirdPartySegEntity.getKey() != null && macroSegment == null){
                             if(thirdPartySegEntity.getLineItemList() != null && !thirdPartySegEntity.getLineItemList().isEmpty()) {
                                 macroSegment = thirdPartySegEntity;
-                                if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
+                                if(enableLogs && (bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress) || ipAddress == "-1")) {
                                     System.out.println("*** Found entry for agent - third party segment ".concat(thirdPartySegEntity.getKey()).concat(" with auction id").concat(bidRequest.getExt().getAuctionidStr()));
                                 }
                             }
@@ -150,7 +150,7 @@ public class LookupService {
                                     creativeBuilder.setId(creativeItem.getId());
                                     bidBuilder.setCreative(creativeBuilder.build());
                                     responseBuilder.addBids(bidBuilder.build());
-                                    if(enableLogs && bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress)) {
+                                    if(enableLogs && (bidRequest.getDevice().getIp().equalsIgnoreCase(ipAddress) || ipAddress == "-1")) {
                                         System.out.println("*** Dynamic Macro Creative: \n".concat(bidBuilder.build().toString().replace("\n", "$$")));
                                     }
                                     foundCreative = true;
